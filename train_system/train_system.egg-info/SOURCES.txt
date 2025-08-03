@@ -1,9 +1,12 @@
 LICENSE
 MANIFEST.in
 README.md
+pyproject.toml
 requirements.txt
 setup.py
+custom_adapters/capsule_forensics_adapter.py
 custom_trainers/__init__.py
+custom_trainers/capsule_forensics_trainer.py
 custom_trainers/yolo_trainer.py
 docs/CONFIGURATION_GUIDE.md
 docs/WEIGHT_FORMATS.md
@@ -22,6 +25,7 @@ train_system/adapters/external_adapter.py
 train_system/api/__init__.py
 train_system/api/server.py
 train_system/cli/__init__.py
+train_system/cli/dry_run.py
 train_system/cli/main.py
 train_system/config/__init__.py
 train_system/config/templates/generic.yaml
@@ -31,6 +35,10 @@ train_system/core/dataset.py
 train_system/core/external_trainer.py
 train_system/core/trainer.py
 train_system/core/wrapper.py
+train_system/registry/__init__.py
+train_system/registry/adapter_registry.py
+train_system/registry/discovery.py
+train_system/registry/trainer_registry.py
 train_system/utils/__init__.py
 train_system/utils/memory.py
 train_system/utils/weights.py

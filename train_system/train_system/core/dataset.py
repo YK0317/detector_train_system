@@ -198,31 +198,32 @@ class UnifiedDataset(Dataset):
                 raise ValueError(f"No test path specified for {split} split")
         
         # Load images from each class folder
+        print(f"Loading {split} data...")
+        total_images = 0
+        
         for class_name, folder_path in class_paths.items():
             class_dir = Path(folder_path)
-            print(f"🔍 DEBUG: Checking class {class_name} at {class_dir}")
+            
             if not class_dir.exists():
-                print(f"❌ DEBUG: Class folder not found: {class_dir}")
+                print(f"Warning: Class folder not found: {class_dir}")
                 logging.warning(f"Class folder not found: {class_dir}")
                 continue
             
             # Get class index
             class_idx = self.config.class_mapping.get(class_name, 0)
-            print(f"✅ DEBUG: Class {class_name} -> index {class_idx}")
             
             # Load images
             image_count = 0
             for ext in ['*.jpg', '*.jpeg', '*.png', '*.bmp', '*.tiff']:
                 images_found = list(class_dir.glob(ext))
-                if images_found:
-                    print(f"📁 DEBUG: Found {len(images_found)} {ext} files in {class_name}")
                 for img_path in images_found:
                     self.samples.append((str(img_path), class_idx))
                     image_count += 1
             
-            print(f"✅ DEBUG: Loaded {image_count} images from {class_name}")
+            print(f"  {class_name}: {image_count:,} images")
+            total_images += image_count
         
-        print(f"🎯 DEBUG: Total samples loaded: {len(self.samples)}")
+        print(f"Total: {total_images:,} images loaded for {split}")
     
     def _load_csv_data(self, split: str):
         """Load data from CSV file"""

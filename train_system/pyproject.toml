@@ -1,0 +1,162 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "train-system"
+version = "2.0.0"
+description = "A comprehensive, unified training system for PyTorch models"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Train System Team", email = "contact@train-system.ai"}
+]
+maintainers = [
+    {name = "Train System Team", email = "contact@train-system.ai"}
+]
+keywords = ["pytorch", "training", "machine-learning", "deep-learning", "neural-networks"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "torch>=1.9.0",
+    "torchvision>=0.10.0",
+    "Pillow>=8.0.0",
+    "PyYAML>=5.4.0",
+    "tensorboard>=2.7.0",
+    "tqdm>=4.60.0",
+    "numpy>=1.20.0",
+    "pandas>=1.3.0",
+    "psutil>=5.8.0",
+]
+
+[project.optional-dependencies]
+web = [
+    "flask>=2.0.0",
+    "flask-cors>=3.0.0",
+    "requests>=2.25.0",
+]
+dev = [
+    "pytest>=6.0.0",
+    "pytest-cov>=2.10.0",
+    "black>=21.0.0",
+    "isort>=5.0.0",
+    "flake8>=3.8.0",
+    "mypy>=0.800",
+    "pre-commit>=2.15.0",
+]
+docs = [
+    "sphinx>=4.0.0",
+    "sphinx-rtd-theme>=0.5.0",
+    "myst-parser>=0.15.0",
+]
+optional = [
+    "timm>=0.6.0",
+    "transformers>=4.0.0",
+    "wandb>=0.12.0",
+    "mlflow>=1.20.0",
+    "opencv-python>=4.5.0",
+    "scikit-learn>=1.0.0",
+    "matplotlib>=3.3.0",
+    "seaborn>=0.11.0",
+    "rich>=12.0.0",
+]
+all = [
+    "flask>=2.0.0",
+    "flask-cors>=3.0.0",
+    "requests>=2.25.0",
+    "timm>=0.6.0",
+    "transformers>=4.0.0",
+    "wandb>=0.12.0",
+    "mlflow>=1.20.0",
+    "opencv-python>=4.5.0",
+    "scikit-learn>=1.0.0",
+    "matplotlib>=3.3.0",
+    "seaborn>=0.11.0",
+    "rich>=12.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/train-system/train-system"
+Documentation = "https://train-system.readthedocs.io/"
+Repository = "https://github.com/train-system/train-system.git"
+"Bug Reports" = "https://github.com/train-system/train-system/issues"
+Changelog = "https://github.com/train-system/train-system/blob/main/CHANGELOG.md"
+
+[project.scripts]
+train-system = "train_system.cli.main:main"
+ts-train = "train_system.cli.main:train_command"
+ts-dry-run = "train_system.cli.main:dry_run_command"
+ts-api = "train_system.api.server:run_server"
+ts-template = "train_system.cli.main:template_command"
+ts-config = "train_system.cli.main:complete_config_command"
+ts-validate = "train_system.cli.main:validate_command"
+ts-list = "train_system.cli.main:list_command"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "examples*"]
+
+[tool.setuptools.package-data]
+train_system = [
+    "config/templates/*.yaml",
+    "config/templates/*.json",
+    "configs/*.yaml",
+    "configs/*.json",
+    "examples/*.py",
+    "examples/*.yaml",
+    "docs/*.md",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["train_system"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

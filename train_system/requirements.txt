@@ -1,22 +1,41 @@
-# Core dependencies
+# Core PyTorch dependencies
 torch>=1.9.0
 torchvision>=0.10.0
+torchaudio>=0.9.0
+
+# Core Python dependencies
 Pillow>=8.0.0
 PyYAML>=5.4.0
+numpy>=1.20.0
+pandas>=1.3.0
+
+# Training utilities
 tensorboard>=2.7.0
 tqdm>=4.60.0
-numpy>=1.20.0
 
 # Web API dependencies
 flask>=2.0.0
 flask-cors>=3.0.0
+requests>=2.25.0
 
-# Data handling
-pandas>=1.3.0
-
-# System utilities
+# System monitoring
 psutil>=5.8.0
 
-# Optional dependencies
+# Configuration and utilities
+pathlib>=1.0.1
+typing-extensions>=4.0.0
+
+# Optional but recommended
+matplotlib>=3.3.0
+seaborn>=0.11.0
+scikit-learn>=1.0.0
+
+# For enhanced progress bars and logging
+rich>=12.0.0
+
+# Optional model libraries (uncomment as needed)
 # timm>=0.6.0  # For timm models
+# transformers>=4.0.0  # For Hugging Face models
 # wandb>=0.12.0  # For Weights & Biases logging
+# mlflow>=1.20.0  # For MLflow tracking
+# opencv-python>=4.5.0  # For advanced image processing

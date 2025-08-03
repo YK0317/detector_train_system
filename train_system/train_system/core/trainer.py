@@ -18,6 +18,8 @@ import random
 import numpy as np
 from typing import Dict, Any, Optional, Tuple
 import json
+import time
+from tqdm import tqdm
 
 from ..config import UnifiedTrainingConfig, ModelConfig
 from ..core.wrapper import ModelFactory
@@ -193,7 +195,63 @@ class UnifiedTrainer:
                 torch.backends.cudnn.deterministic = True
                 torch.backends.cudnn.benchmark = False
             
-            self.logger.info(f"🎲 Reproducibility seed set to: {self.config.seed}")
+            self.logger.info(f"Reproducibility seed set to: {self.config.seed}")
+    
+    def setup_clean_logging(self):
+        """Setup clean logging without emojis"""
+        self.start_time = time.time()
+        self.best_acc = 0.0
+        
+        # Create simple log file
+        log_file = self.output_dir / "training.log"
+        self.log_file = open(log_file, 'w')
+        
+        print(f"\n{'=' * 60}")
+        print(f"TRAINING STARTED")
+        print(f"{'=' * 60}")
+        print(f"Model: {self.config.model.name}")
+        print(f"Device: {self.device}")
+        print(f"Epochs: {self.config.training.epochs}")
+        print(f"Output: {self.output_dir}")
+        print(f"{'-' * 60}")
+
+    def log_epoch_results(self, epoch, train_loss, train_acc, val_loss, val_acc):
+        """Clean epoch logging without emojis"""
+        is_best = val_acc > self.best_acc
+        if is_best:
+            self.best_acc = val_acc
+        
+        # Console output
+        status = "NEW BEST" if is_best else "        "
+        print(f"Epoch {epoch+1:3d} | Train: {train_loss:.4f} ({train_acc:5.1f}%) | "
+              f"Val: {val_loss:.4f} ({val_acc:5.1f}%) | {status}")
+        
+        # File output
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        self.log_file.write(f"{timestamp} | Epoch {epoch+1:3d} | "
+                           f"Train: {train_loss:.4f}/{train_acc:.2f}% | "
+                           f"Val: {val_loss:.4f}/{val_acc:.2f}% | "
+                           f"Best: {self.best_acc:.2f}%\n")
+        self.log_file.flush()
+
+    def log_training_complete(self):
+        """Clean completion logging"""
+        total_time = time.time() - self.start_time
+        print(f"{'-' * 60}")
+        print(f"TRAINING COMPLETE")
+        print(f"Best Accuracy: {self.best_acc:.2f}%")
+        print(f"Total Time: {total_time/60:.1f} minutes")
+        print(f"{'=' * 60}\n")
+        
+        self.log_file.write(f"\n=== TRAINING COMPLETE ===\n")
+        self.log_file.write(f"Best Accuracy: {self.best_acc:.2f}%\n")
+        self.log_file.write(f"Total Time: {total_time:.1f}s\n")
+        self.log_file.close()
+    
+    def __del__(self):
+        """Cleanup logging resources"""
+        if hasattr(self, 'log_file') and self.log_file and not self.log_file.closed:
+            self.log_file.close()
     
     def load_model(self):
         """Load and setup model"""
@@ -930,108 +988,159 @@ class UnifiedTrainer:
         return hybrid_trainer.train()
     
     def _train_with_builtin_trainer(self):
-        """Train using built-in training method"""
-        self.logger.info("🚀 Starting Unified Training")
-        self.logger.info("=" * 60)
-        
+        """Train using built-in training method with clean logging"""
         # Setup everything
         self.load_model()
         self.load_data()
         self.setup_optimizer()
+        self.setup_clean_logging()
         
         # Save configuration
         if self.config.output.save_config:
             self.config.save_yaml(self.output_dir / 'config.yaml')
             self.config.save_json(self.output_dir / 'config.json')
         
-        # Training loop with performance optimizations
-        self.logger.info(f"🏋️ Starting training for {self.config.training.epochs} epochs...")
-        log_memory_usage("training_start")
+        # Show dataset info after loading
+        print(f"Dataset: {len(self.train_loader):,} train batches, {len(self.val_loader):,} val batches")
         
-        for epoch in range(self.config.training.epochs):
-            self.current_epoch = epoch
-            self.logger.info(f"Epoch {epoch+1}/{self.config.training.epochs}")
-            
-            # Train
-            train_metrics = self.train_epoch()
-            self.train_losses.append(train_metrics['loss'])
-            
-            # Strategic validation - more frequent early, less frequent later
-            should_validate = (
-                epoch % self.config.training.val_frequency == 0 or
-                epoch == self.config.training.epochs - 1 or  # Last epoch
-                epoch < 5  # First few epochs for early monitoring
-            )
-            
-            if should_validate:
-                val_metrics = self.validate()
-                self.val_accuracies.append(val_metrics['accuracy'])
+        epochs = self.config.training.epochs
+        
+        try:
+            for epoch in range(epochs):
+                self.current_epoch = epoch
                 
-                # Update learning rate (for plateau scheduler)
-                if self.scheduler and self.config.training.scheduler.lower() == 'plateau':
-                    self.scheduler.step(val_metrics['accuracy'])
-                elif self.scheduler and self.config.training.scheduler.lower() != 'plateau':
-                    self.scheduler.step()
+                # Training phase with progress bar
+                train_loss, train_acc = self._train_epoch_with_progress(epoch)
+                self.train_losses.append(train_loss)
                 
-                # Check for best model
-                is_best = val_metrics['accuracy'] > self.best_val_acc
-                if is_best:
-                    self.best_val_acc = val_metrics['accuracy']
+                # Validation phase with progress bar
+                val_loss, val_acc = self._validate_epoch_with_progress(epoch)
+                self.val_accuracies.append(val_acc)
+                
+                # Scheduler step
+                if self.scheduler:
+                    if self.config.training.scheduler.lower() == 'plateau':
+                        self.scheduler.step(val_acc)
+                    else:
+                        self.scheduler.step()
                 
                 # Log results
-                current_lr = self.optimizer.param_groups[0]['lr']
-                self.logger.info(f"📊 Epoch {epoch+1} Results:")
-                self.logger.info(f"   Train Loss: {train_metrics['loss']:.4f} | Train Acc: {train_metrics['accuracy']:.2f}%")
-                self.logger.info(f"   Val Loss: {val_metrics['loss']:.4f} | Val Acc: {val_metrics['accuracy']:.2f}%")
-                self.logger.info(f"   Learning Rate: {current_lr:.2e}")
+                self.log_epoch_results(epoch, train_loss, train_acc, val_loss, val_acc)
+                
+                # Update best accuracy
+                if val_acc > self.best_val_acc:
+                    self.best_val_acc = val_acc
+                
+                # Save checkpoint
+                if epoch % self.config.training.save_frequency == 0 or val_acc > self.best_val_acc:
+                    self.save_checkpoint(epoch + 1, val_acc > self.best_val_acc)
                 
                 # Tensorboard logging
                 if self.writer:
-                    self.writer.add_scalar('Loss/Train_Epoch', train_metrics['loss'], epoch)
-                    self.writer.add_scalar('Loss/Val_Epoch', val_metrics['loss'], epoch)
-                    self.writer.add_scalar('Accuracy/Train_Epoch', train_metrics['accuracy'], epoch)
-                    self.writer.add_scalar('Accuracy/Val_Epoch', val_metrics['accuracy'], epoch)
-                    self.writer.add_scalar('Learning_Rate', current_lr, epoch)
-                
-                # Save checkpoint
-                if epoch % self.config.training.save_frequency == 0 or is_best:
-                    self.save_checkpoint(epoch + 1, is_best)
-                    
-                # Memory optimization
-                if epoch % 10 == 0:  # Every 10 epochs
-                    optimize_memory()
-                    log_memory_usage(f"epoch_{epoch+1}")
-            else:
-                # Non-validation epochs - just update scheduler
-                if self.scheduler and self.config.training.scheduler.lower() not in ['plateau']:
-                    self.scheduler.step()
-                
-                # Lightweight logging
-                current_lr = self.optimizer.param_groups[0]['lr']
-                self.logger.info(f"📈 Epoch {epoch+1}: Train Loss: {train_metrics['loss']:.4f} | Train Acc: {train_metrics['accuracy']:.2f}% | LR: {current_lr:.2e}")
+                    self.writer.add_scalar('Loss/Train_Epoch', train_loss, epoch)
+                    self.writer.add_scalar('Loss/Val_Epoch', val_loss, epoch)
+                    self.writer.add_scalar('Accuracy/Train_Epoch', train_acc, epoch)
+                    self.writer.add_scalar('Accuracy/Val_Epoch', val_acc, epoch)
+                    self.writer.add_scalar('Learning_Rate', self.optimizer.param_groups[0]['lr'], epoch)
             
-            self.logger.info("-" * 60)
+            self.log_training_complete()
+            
+            # Save final results
+            results = {
+                'best_val_accuracy': self.best_val_acc,
+                'train_losses': self.train_losses,
+                'val_accuracies': self.val_accuracies,
+                'config': self.config.to_dict(),
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            with open(self.output_dir / 'training_results.json', 'w') as f:
+                json.dump(results, f, indent=2)
+            
+            # Close tensorboard writer
+            if self.writer:
+                self.writer.close()
+            
+            return results
+            
+        except Exception as e:
+            print(f"Training failed: {e}")
+            if hasattr(self, 'log_file') and self.log_file and not self.log_file.closed:
+                self.log_file.close()
+            raise
+    
+    def _train_epoch_with_progress(self, epoch):
+        """Training epoch with progress bar"""
+        self.model.train()
+        total_loss = 0.0
+        correct = 0
+        total = 0
         
-        # Training completed
-        self.logger.info("🎉 Training Completed!")
-        self.logger.info(f"🏆 Best Validation Accuracy: {self.best_val_acc:.2f}%")
+        # Progress bar for training
+        desc = f"Epoch {epoch+1:2d} Train"
+        pbar = tqdm(self.train_loader, desc=desc, leave=False,
+                    bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] {postfix}')
         
-        # Save final results
-        results = {
-            'best_val_accuracy': self.best_val_acc,
-            'train_losses': self.train_losses,
-            'val_accuracies': self.val_accuracies,
-            'config': self.config.to_dict(),
-            'timestamp': datetime.now().isoformat()
-        }
+        for data, target in pbar:
+            data, target = data.to(self.device), target.to(self.device)
+            
+            self.optimizer.zero_grad()
+            output = self.model(data)
+            loss = self.criterion(output, target)
+            loss.backward()
+            self.optimizer.step()
+            
+            # Statistics
+            total_loss += loss.item()
+            pred = output.argmax(dim=1)
+            correct += pred.eq(target).sum().item()
+            total += target.size(0)
+            
+            # Update progress bar
+            current_acc = 100.0 * correct / total
+            pbar.set_postfix({
+                'Loss': f'{loss.item():.4f}',
+                'Acc': f'{current_acc:.1f}%'
+            })
         
-        with open(self.output_dir / 'training_results.json', 'w') as f:
-            json.dump(results, f, indent=2)
+        pbar.close()
+        avg_loss = total_loss / len(self.train_loader)
+        accuracy = 100.0 * correct / total
+        return avg_loss, accuracy
+
+    def _validate_epoch_with_progress(self, epoch):
+        """Validation epoch with progress bar"""
+        self.model.eval()
+        total_loss = 0.0
+        correct = 0
+        total = 0
         
-        # Close tensorboard writer
-        if self.writer:
-            self.writer.close()
+        # Progress bar for validation
+        desc = f"Epoch {epoch+1:2d} Val  "
+        pbar = tqdm(self.val_loader, desc=desc, leave=False,
+                    bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] {postfix}')
         
-        self.logger.info(f"📄 Results saved to {self.output_dir}")
+        with torch.no_grad():
+            for data, target in pbar:
+                data, target = data.to(self.device), target.to(self.device)
+                
+                output = self.model(data)
+                loss = self.criterion(output, target)
+                
+                # Statistics
+                total_loss += loss.item()
+                pred = output.argmax(dim=1)
+                correct += pred.eq(target).sum().item()
+                total += target.size(0)
+                
+                # Update progress bar
+                current_acc = 100.0 * correct / total
+                pbar.set_postfix({
+                    'Loss': f'{loss.item():.4f}',
+                    'Acc': f'{current_acc:.1f}%'
+                })
         
-        return results
+        pbar.close()
+        avg_loss = total_loss / len(self.val_loader)
+        accuracy = 100.0 * correct / total
+        return avg_loss, accuracy

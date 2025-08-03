@@ -1,6 +1,9 @@
 [console_scripts]
 train-system = train_system.cli.main:main
 ts-api = train_system.api.server:run_server
-ts-complete-config = train_system.cli.main:complete_config_command
+ts-config = train_system.cli.main:complete_config_command
+ts-dry-run = train_system.cli.main:dry_run_command
+ts-list = train_system.cli.main:list_command
 ts-template = train_system.cli.main:template_command
 ts-train = train_system.cli.main:train_command
+ts-validate = train_system.cli.main:validate_command

@@ -11,6 +11,7 @@ import json
 import yaml
 import logging
 import torch
+from datetime import datetime
 
 from ..config import UnifiedTrainingConfig, ConfigTemplateManager, ConfigValidator
 from ..core.trainer import UnifiedTrainer
@@ -497,6 +498,152 @@ def complete_config_command():
         create_config_template('complete', args.output)
         print(f"✅ Clean configuration template created: {args.output}")
         print(f"💡 Use --with-comments to include detailed documentation")
+
+
+def dry_run_command():
+    """Entry point for ts-dry-run command"""
+    parser = argparse.ArgumentParser(description='Train System - Dry Run')
+    parser.add_argument('config', help='Configuration file path')
+    parser.add_argument('--batches', type=int, default=2, help='Number of batches to test (default: 2)')
+    parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+    
+    args = parser.parse_args()
+    
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    
+    print(f"Starting dry run with {args.batches} batches...")
+    success = dry_run_training(args.config, args.batches)
+    
+    if success:
+        print("✅ Dry run completed successfully!")
+        sys.exit(0)
+    else:
+        print("❌ Dry run failed!")
+        sys.exit(1)
+
+
+def validate_command():
+    """Entry point for ts-validate command"""
+    parser = argparse.ArgumentParser(description='Train System - Configuration Validator')
+    parser.add_argument('config', help='Configuration file path to validate')
+    parser.add_argument('--strict', action='store_true', help='Enable strict validation')
+    parser.add_argument('--output', help='Save validation report to file')
+    
+    args = parser.parse_args()
+    
+    try:
+        config_path = Path(args.config)
+        if not config_path.exists():
+            print(f"❌ Configuration file not found: {config_path}")
+            sys.exit(1)
+        
+        # Load and validate configuration
+        if config_path.suffix.lower() in ['.yaml', '.yml']:
+            config = UnifiedTrainingConfig.from_yaml(config_path)
+        else:
+            config = UnifiedTrainingConfig.from_json(config_path)
+        
+        # Validate configuration
+        validator = ConfigValidator()
+        result = validator.validate(config.to_dict())
+        
+        print(f"📋 Validating configuration: {config_path}")
+        print(f"{'=' * 50}")
+        
+        if result.is_valid:
+            print("✅ Configuration is valid!")
+            if result.warnings:
+                print(f"\n⚠️  {len(result.warnings)} warnings:")
+                for warning in result.warnings:
+                    print(f"   • {warning}")
+        else:
+            print("❌ Configuration validation failed!")
+            print(f"\n🚫 {len(result.errors)} errors:")
+            for error in result.errors:
+                print(f"   • {error}")
+            
+            if result.warnings:
+                print(f"\n⚠️  {len(result.warnings)} warnings:")
+                for warning in result.warnings:
+                    print(f"   • {warning}")
+        
+        # Save report if requested
+        if args.output:
+            report = {
+                'config_file': str(config_path),
+                'is_valid': result.is_valid,
+                'errors': result.errors,
+                'warnings': result.warnings,
+                'timestamp': str(datetime.now())
+            }
+            
+            output_path = Path(args.output)
+            if output_path.suffix.lower() == '.json':
+                with open(output_path, 'w') as f:
+                    json.dump(report, f, indent=2)
+            else:
+                with open(output_path, 'w') as f:
+                    yaml.dump(report, f, default_flow_style=False)
+            
+            print(f"📄 Validation report saved to: {output_path}")
+        
+        sys.exit(0 if result.is_valid else 1)
+        
+    except Exception as e:
+        print(f"❌ Validation error: {e}")
+        sys.exit(1)
+
+
+def list_command():
+    """Entry point for ts-list command"""
+    parser = argparse.ArgumentParser(description='Train System - List Components')
+    parser.add_argument('--adapters', action='store_true', help='List available adapters')
+    parser.add_argument('--trainers', action='store_true', help='List available trainers')
+    parser.add_argument('--templates', action='store_true', help='List available templates')
+    parser.add_argument('--models', action='store_true', help='List trained models')
+    parser.add_argument('--all', action='store_true', help='List all components')
+    parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+    
+    args = parser.parse_args()
+    
+    # If no specific option is chosen, default to all
+    if not any([args.adapters, args.trainers, args.templates, args.models]):
+        args.all = True
+    
+    print("🎯 Train System Components")
+    print("=" * 50)
+    
+    if args.all or args.adapters:
+        print("\n📋 Available Adapters:")
+        try:
+            from ..registry import list_available_components
+            list_available_components(verbose=args.verbose)
+        except ImportError:
+            print("   • AutoAdapter (built-in)")
+            print("   • StandardAdapter (built-in)")
+            print("   • LogitsAndFeaturesAdapter (built-in)")
+            print("   • DictOutputAdapter (built-in)")
+            print("   • CapsuleNetworkAdapter (built-in)")
+    
+    if args.all or args.templates:
+        print("\n📄 Available Templates:")
+        templates = ['blip', 'generic', 'torchvision', 'complete']
+        for template in templates:
+            print(f"   • {template}")
+    
+    if args.all or args.models:
+        print("\n🤖 Trained Models:")
+        try:
+            from ..utils.weights import list_available_weights
+            list_available_weights()
+        except Exception as e:
+            print(f"   Error listing models: {e}")
+    
+    if args.all or args.trainers:
+        print("\n🔧 Training Modes:")
+        print("   • Built-in Trainer (default)")
+        print("   • External Trainer (via registry)")
 
 
 if __name__ == "__main__":
