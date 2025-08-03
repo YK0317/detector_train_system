@@ -1,0 +1,76 @@
+data:
+  augmentation:
+    color_jitter: false
+    horizontal_flip: true
+    normalize: true
+    rotation: 10
+  batch_size: 16
+  class_folders: {}
+  class_mapping:
+    fake: 1
+    real: 0
+  fake_path: fake
+  img_size: 256
+  max_samples: 5
+  name: URS
+  num_workers: 4
+  pin_memory: true
+  real_path: real
+  shuffle_train: true
+  test_path: null
+  train_path: C:\Users\mingw\Desktop\training\URS-train\train
+  type: folder
+  val_path: C:\Users\mingw\Desktop\training\URS-train\validation
+description: YOLO model training on URS dataset
+deterministic: false
+device: auto
+model:
+  adapter: null
+  adapter_config: {}
+  architecture: null
+  class_name: YOLOStandalone
+  dropout: 0.1
+  freeze_backbone: false
+  img_size: 256
+  load_optimizer: false
+  load_scheduler: false
+  model_args:
+    num_classes: 2
+  name: YOLO
+  num_classes: 2
+  path: ../models/yolo_standalone.py
+  pretrained: false
+  pretrained_weights: null
+  strict_loading: true
+  type: file
+output:
+  experiment_name: yolo_test
+  output_dir: training_output
+  save_best_only: true
+  save_config: true
+  save_last: true
+  save_logs: true
+  save_model: true
+  save_optimizer: true
+  save_scheduler: true
+seed: 42
+tags:
+- yolo
+- detection
+- URS
+training:
+  accumulation_steps: 1
+  early_stopping_patience: 15
+  epochs: 1
+  gradient_clipping: 1.0
+  learning_rate: 0.001
+  log_interval: 10
+  mixed_precision: false
+  optimizer: adamw
+  save_frequency: 10
+  scheduler: cosine
+  scheduler_params: {}
+  tensorboard: true
+  val_frequency: 5
+  wandb: false
+  weight_decay: 0.0005

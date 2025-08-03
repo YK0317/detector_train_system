@@ -1,0 +1,81 @@
+# xception_config.yaml
+model:
+  name: "xception_deepfake"
+  type: "file"                         # Load from file
+  path: "C:\\Users\\mingw\\Desktop\\refactor\\xception.py"  # Absolute path to your xception.py file
+  class_name: "Xception"               # Use class name (capital X)
+  architecture: null
+  pretrained: false                    # Set to true if you want pretrained weights
+  
+  # Xception-specific parameters
+  num_classes: 2                       # Binary classification (real/fake)
+  
+  # Model initialization parameters
+  model_args:
+    num_classes: 2                     # Pass num_classes to model constructor
+  
+  # No adapter needed - standard PyTorch model
+  adapter: null                        # Changed from auto to null
+  adapter_config: {}
+
+data:
+  name: "DeepfakeDetection"
+  type: "class_folders"
+  train_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\train"      # Update with your paths
+  val_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\validation"          # Update with your paths
+  
+  # Class folder configuration (required for class_folders type)
+  class_folders:
+    real: "real"                       # Subfolder name for real images
+    fake: "fake"                       # Subfolder name for fake images
+  
+  # Class mapping for binary classification
+  class_mapping:
+    real: 0                            # Real images = class 0
+    fake: 1                            # Fake images = class 1
+  
+  # Xception requirements (as per documentation)
+  img_size: 299                        # IMPORTANT: Xception uses 299x299
+  batch_size: 8                        # Reduced from 16 for stability
+  num_workers: 2                       # Reduced from 4 for Windows stability
+  pin_memory: true
+  
+  augmentation:
+    enabled: true
+    horizontal_flip: true
+    rotation: 10
+    color_jitter: true
+    normalize: true
+    # Xception-specific normalization (as per documentation)
+    normalization_mean: [0.5, 0.5, 0.5]     # Different from ImageNet!
+    normalization_std: [0.5, 0.5, 0.5]      # Different from ImageNet!
+
+training:
+  epochs: 50
+  learning_rate: 0.001
+  optimizer: "adam"
+  weight_decay: 0.0001
+  
+  # Learning rate scheduling
+  scheduler: "cosine"
+  scheduler_params:
+    T_max: 50
+    eta_min: 0.00001
+  
+  # Training settings
+  save_frequency: 5
+  val_frequency: 1
+  early_stopping_patience: 10
+
+output:
+  output_dir: "training_output"
+  experiment_name: "xception_deepfake"
+  save_best_only: false
+  save_lightweight: true
+
+# System settings
+device: "auto"                         # Changed from cuda to auto-detect
+seed: 42
+
+description: "Xception model for deepfake detection"
+tags: ["xception", "deepfake-detection", "binary-classification"]

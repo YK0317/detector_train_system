@@ -1,0 +1,86 @@
+# Configuration for YOLO Built-in Training
+# This uses YOLO's optimized training pipeline via external trainer
+
+# Model configuration
+model:
+  name: "yolo_classification"
+  type: "file"
+  path: "yolov8n-cls.pt"  # Or path to your custom YOLO model
+  class_name: "YOLODetector"
+  num_classes: 2
+  img_size: 224
+
+# Dataset configuration  
+data:
+  name: "classification_dataset"
+  type: "class_folders"
+  train_path: "data/train"
+  val_path: "data/val"  # Optional, will split train_path if not provided
+  real_path: "data/real"
+  fake_path: "data/fake"
+  batch_size: 32
+  img_size: 224
+  num_workers: 4
+  
+  # Class mapping for binary classification
+  class_mapping:
+    fake: 0
+    real: 1
+  
+  # Data augmentation (handled by YOLO internally)
+  augmentation:
+    normalize: true
+
+# Training configuration
+training:
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.0005
+  optimizer: "adam"  # adam, adamw, sgd
+  scheduler: "cosine"  # cosine, step, none
+  
+  # Early stopping
+  early_stopping_patience: 15
+  
+  # Training behavior
+  save_frequency: 10
+  log_interval: 10
+
+# Output configuration
+output:
+  output_dir: "training_output"
+  experiment_name: "yolo_builtin"
+  save_best_only: true
+  save_last: true
+  weight_format: "pt"  # YOLO format
+
+# External trainer configuration - Use YOLO's built-in training
+external_trainer:
+  enabled: true
+  script_path: "custom_trainers/yolo_trainer.py"
+  class_name: "YOLOBuiltinTrainer"  # Use YOLO's built-in train function
+  
+  # Custom parameters for YOLO training
+  parameters:
+    # Additional YOLO-specific parameters
+    yolo_params:
+      cos_lr: true        # Cosine learning rate scheduler
+      mixup: 0.1          # Mixup augmentation strength
+      copy_paste: 0.1     # Copy-paste augmentation
+      degrees: 15.0       # Image rotation degrees
+      translate: 0.1      # Image translation
+      scale: 0.5          # Image scale variation
+      shear: 0.0          # Image shear
+      perspective: 0.0    # Image perspective
+      flipud: 0.0         # Image flip up-down probability
+      fliplr: 0.5         # Image flip left-right probability
+      mosaic: 1.0         # Mosaic augmentation probability
+      hsv_h: 0.015        # Image HSV-Hue augmentation
+      hsv_s: 0.7          # Image HSV-Saturation augmentation  
+      hsv_v: 0.4          # Image HSV-Value augmentation
+
+# System settings
+device: "auto"
+seed: 42
+description: "YOLO classification using built-in training pipeline"
+tags: ["yolo", "classification", "builtin"]

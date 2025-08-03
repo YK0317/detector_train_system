@@ -1,0 +1,57 @@
+# High-Performance Training Configuration
+# This configuration enables all performance optimizations
+
+model:
+  name: "optimized_model"
+  type: "file"
+  path: "models/your_model.py" 
+  class_name: "YourModel"
+  num_classes: 2
+  img_size: 224
+
+data:
+  name: "optimized_dataset"
+  type: "folder"
+  train_path: "data/train"
+  val_path: "data/val"
+  batch_size: 64  # Larger batch size for better GPU utilization
+  num_workers: 4
+  pin_memory: true
+  shuffle_train: true
+
+training:
+  epochs: 50
+  learning_rate: 0.001
+  weight_decay: 0.0005
+  optimizer: "adamw"
+  scheduler: "cosine"
+  
+  # Performance optimizations
+  metrics_frequency: 200        # Calculate detailed metrics every 200 steps (vs every step)
+  checkpoint_frequency: 10      # Save full checkpoint every 10 epochs (vs every 5)
+  non_blocking_transfer: true   # Use non-blocking GPU transfer
+  efficient_validation: true   # Use memory-efficient validation
+  
+  # Standard settings
+  val_frequency: 2             # Validate every 2 epochs for speed
+  save_frequency: 5
+  early_stopping_patience: 15
+  log_interval: 50             # Log less frequently for speed
+
+output:
+  output_dir: "training_output"
+  experiment_name: "optimized_experiment"
+  save_best_only: true
+  save_last: true
+  
+  # Performance optimizations
+  save_lightweight: true       # Save lightweight deployment weights
+  keep_recent_checkpoints: 3   # Only keep 3 recent full checkpoints
+
+# System settings
+device: "auto"
+seed: 42
+deterministic: false  # Disable for better performance
+
+description: "High-performance training configuration with optimizations"
+tags: ["optimized", "performance"]

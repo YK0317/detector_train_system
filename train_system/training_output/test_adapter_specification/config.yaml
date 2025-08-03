@@ -1,0 +1,75 @@
+data:
+  augmentation:
+    color_jitter: true
+    horizontal_flip: true
+    normalize: true
+    rotation: 10
+  batch_size: 8
+  class_folders: {}
+  class_mapping:
+    fake: 1
+    real: 0
+  fake_path: C:\Users\mingw\Desktop\training\URS-train\train\fake
+  img_size: 256
+  max_samples: 5
+  name: URS_ClassFolders_Test
+  num_workers: 2
+  pin_memory: true
+  real_path: C:\Users\mingw\Desktop\training\URS-train\train\real
+  shuffle_train: true
+  test_path: null
+  train_path: ''
+  type: class_folders
+  val_path: ''
+description: Test adapter specification with default to AutoAdapter
+deterministic: false
+device: auto
+model:
+  adapter: standard
+  adapter_config: {}
+  architecture: null
+  class_name: YOLOStandalone
+  dropout: 0.1
+  freeze_backbone: false
+  img_size: 256
+  load_optimizer: false
+  load_scheduler: false
+  model_args: {}
+  name: YOLO_Test
+  num_classes: 2
+  path: ../models/yolo_standalone.py
+  pretrained: false
+  pretrained_weights: null
+  strict_loading: true
+  type: file
+output:
+  experiment_name: test_adapter_specification
+  output_dir: training_output
+  save_best_only: true
+  save_config: true
+  save_last: true
+  save_logs: true
+  save_model: true
+  save_optimizer: true
+  save_scheduler: true
+seed: 42
+tags:
+- test
+- adapter
+- class_folders
+training:
+  accumulation_steps: 1
+  early_stopping_patience: 10
+  epochs: 1
+  gradient_clipping: 1.0
+  learning_rate: 0.001
+  log_interval: 5
+  mixed_precision: false
+  optimizer: adamw
+  save_frequency: 1
+  scheduler: cosine
+  scheduler_params: {}
+  tensorboard: true
+  val_frequency: 1
+  wandb: false
+  weight_decay: 0.0005

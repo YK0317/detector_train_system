@@ -1,0 +1,63 @@
+# Example configuration demonstrating augmentation control and custom normalization
+# This shows how to configure data augmentation and normalization values
+
+# Model configuration
+model:
+  name: "efficientnet_example"
+  type: "timm"
+  architecture: "efficientnet_b0"
+  pretrained: true
+  num_classes: 2
+  freeze_backbone: false
+
+# Data configuration with augmentation options
+data:
+  name: "custom_dataset"
+  type: "class_folders"
+  real_path: "data/real"
+  fake_path: "data/fake"
+  img_size: 224
+  batch_size: 32
+  num_workers: 4
+  
+  # Comprehensive augmentation configuration
+  augmentation:
+    # Master switch - set to false to disable ALL augmentations
+    enabled: true
+    
+    # Individual augmentation controls
+    horizontal_flip: true
+    rotation: 15
+    color_jitter: true
+    
+    # Normalization settings
+    normalize: true
+    # Custom normalization values (defaults to ImageNet if not specified)
+    normalization_mean: [0.485, 0.456, 0.406]  # RGB means
+    normalization_std: [0.229, 0.224, 0.225]   # RGB standard deviations
+    
+    # Note: If you want to use different normalization (e.g., for a custom dataset):
+    # normalization_mean: [0.5, 0.5, 0.5]    # Custom means
+    # normalization_std: [0.5, 0.5, 0.5]     # Custom stds
+
+# Training configuration
+training:
+  epochs: 50
+  learning_rate: 0.001
+  optimizer: "adamw"
+  scheduler: "cosine"
+  gradient_clipping: 1.0
+  val_frequency: 1
+  save_frequency: 5
+
+# Output configuration
+output:
+  output_dir: "training_output"
+  experiment_name: "augmentation_example"
+  save_best_only: true
+  save_config: true
+
+# Device and reproducibility
+device: "auto"
+seed: 42
+deterministic: true

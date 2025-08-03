@@ -1,0 +1,50 @@
+# Example configuration with augmentation disabled
+# This demonstrates how to train without data augmentation
+
+# Model configuration
+model:
+  name: "resnet_no_aug"
+  type: "torchvision"
+  architecture: "resnet18"
+  pretrained: true
+  num_classes: 10
+
+# Data configuration with augmentation DISABLED
+data:
+  name: "clean_dataset"
+  type: "class_folders"
+  real_path: "data/real"
+  fake_path: "data/fake"
+  img_size: 224
+  batch_size: 64
+  
+  # Augmentation configuration - DISABLED
+  augmentation:
+    # Disable all augmentations
+    enabled: false
+    
+    # These settings below are ignored when enabled=false
+    horizontal_flip: true
+    rotation: 10
+    color_jitter: true
+    
+    # Normalization can still be applied even when augmentation is disabled
+    normalize: true
+    normalization_mean: [0.485, 0.456, 0.406]
+    normalization_std: [0.229, 0.224, 0.225]
+
+# Training configuration
+training:
+  epochs: 30
+  learning_rate: 0.0001
+  optimizer: "adam"
+  scheduler: "step"
+
+# Output configuration
+output:
+  output_dir: "training_output"
+  experiment_name: "no_augmentation"
+  save_best_only: true
+
+device: "auto"
+seed: 42

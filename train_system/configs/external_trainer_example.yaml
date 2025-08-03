@@ -1,0 +1,71 @@
+# Example configuration with external trainer
+# This shows how to use custom training methods with the train_system
+
+# Model configuration
+model:
+  name: "yolo_classifier"
+  type: "file"
+  path: "../models/yolo_standalone.py"
+  class_name: "YOLODetector"
+  num_classes: 2
+  pretrained: true
+  img_size: 224
+
+# Dataset configuration  
+data:
+  name: "binary_classification"
+  type: "class_folders"
+  train_path: "data/train"
+  val_path: "data/val"
+  real_path: "data/real"
+  fake_path: "data/fake"
+  batch_size: 16
+  img_size: 224
+  num_workers: 4
+  pin_memory: true
+  augmentation:
+    horizontal_flip: true
+    rotation: 10
+    normalize: true
+
+# Training configuration
+training:
+  epochs: 50
+  learning_rate: 0.001
+  optimizer: "adam"
+  scheduler: "cosine"
+  weight_decay: 0.0001
+  early_stopping_patience: 10
+
+# Output configuration
+output:
+  output_dir: "training_output"
+  experiment_name: "custom_yolo"
+  save_best_only: true
+  save_last: true
+  weight_format: "pt"  # Save in YOLO-compatible format
+
+# External trainer configuration
+external_trainer:
+  enabled: true
+  script_path: "custom_trainers/yolo_trainer.py"
+  class_name: "CustomYOLOTrainer"
+  
+  # Override settings - let external trainer handle these
+  override_optimizer: true
+  override_scheduler: true
+  override_loss: true
+  override_saving: true
+  
+  # Custom parameters for the external trainer
+  parameters:
+    use_yolo_loss: true
+    save_yolo_format: true
+    custom_augmentations: true
+    tensorboard_logging: true
+
+# System settings
+device: "auto"
+seed: 42
+description: "YOLO classification with custom training method"
+tags: ["yolo", "classification", "custom"]

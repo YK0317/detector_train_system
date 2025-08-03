@@ -1,0 +1,223 @@
+# Complete Configuration for YOLO Built-in Training
+# This uses YOLO's optimized training pipeline via external trainer
+# Includes all supported configuration fields
+
+# ============================================================================
+# MODEL CONFIGURATION
+# ============================================================================
+model:
+  # Basic model information
+  name: "yolo_classification"
+  type: "custom"                       # Use custom type since YOLO trainer will handle model creation
+  path: null                           # YOLO trainer will handle model initialization
+  class_name: "YOLODetector"
+  architecture: null                   # Not applicable for YOLO
+  pretrained: true                     # YOLO will use pretrained weights
+  num_classes: 2
+  
+  # Pretrained weights configuration
+  pretrained_weights: null             # YOLO handles weight loading
+  strict_loading: true
+  load_optimizer: false
+  load_scheduler: false
+  
+  # Model-specific parameters
+  img_size: 224
+  dropout: 0.1
+  freeze_backbone: false
+  
+  # Additional model arguments (passed to model constructor)
+  model_args:
+    model_name: "yolov8n-cls"          # YOLO will auto-download if not found
+    # Additional YOLO model arguments can be added here
+  
+  # Adapter configuration (not used for YOLO external trainer)
+  adapter: null
+  adapter_config: {}
+  
+  # External adapter configuration (not needed for YOLO)
+  external_adapter:
+    script_path: null
+    class_name: null
+    required_packages: []
+    parameters: {}
+
+# ============================================================================
+# DATA CONFIGURATION
+# ============================================================================
+data:
+  # Basic dataset information
+  name: "URS"
+  type: "folder"
+  train_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train"
+  val_path: null                       # YOLO will handle train/val split
+  test_path: null
+  
+  # Class folder configuration (for type="class_folders")
+  class_folders: {}
+  real_path: null
+  fake_path: null
+  
+  # Data processing settings
+  img_size: 256
+  batch_size: 16
+  num_workers: 4
+  pin_memory: true
+  shuffle_train: true
+  
+  # Data augmentation settings (YOLO handles most augmentations)
+  augmentation:
+    enabled: true                      # Master switch to enable/disable all augmentations
+    horizontal_flip: false             # YOLO handles this via fliplr parameter
+    rotation: 0                        # YOLO handles this via degrees parameter
+    color_jitter: false                # YOLO handles HSV augmentation
+    normalize: true                    # Apply normalization
+    normalization_mean: [0.485, 0.456, 0.406]  # Standard ImageNet normalization
+    normalization_std: [0.229, 0.224, 0.225]
+    
+    # Additional augmentation options (handled by YOLO)
+    vertical_flip: false
+    brightness: 0.0
+    contrast: 0.0
+    saturation: 0.0
+    hue: 0.0
+    gaussian_blur: false
+    blur_kernel_size: 3
+    blur_sigma: [0.1, 2.0]
+    random_crop: false
+    random_crop_size: null
+    center_crop: false
+    center_crop_size: null
+    # Note: YOLO augmentations are configured in external_trainer.parameters.yolo_params
+  
+  # Dataset-specific parameters
+  max_samples: 5                       # Use limited samples for testing
+  class_mapping:
+    real: 0
+    fake: 1
+    
+
+
+# ============================================================================
+# TRAINING CONFIGURATION
+# ============================================================================
+training:
+  # Basic training parameters
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.0005
+  optimizer: "adam"                    # Options: "adam", "adamw", "sgd"
+  scheduler: "cosine"                  # Options: "cosine", "step", "plateau", "none"
+  
+  # Training settings
+  gradient_clipping: 1.0               # Gradient clipping threshold
+  mixed_precision: false               # YOLO handles AMP internally
+  accumulation_steps: 1                # Gradient accumulation steps
+  
+  # Validation and saving frequencies
+  val_frequency: 1                     # Validate every N epochs
+  save_frequency: 10                   # Save checkpoint every N epochs
+  early_stopping_patience: 15          # Early stopping patience (epochs)
+  
+  # Performance optimizations
+  metrics_frequency: 100               # Calculate detailed metrics every N steps
+  checkpoint_frequency: 10             # Save full checkpoint every N epochs
+  non_blocking_transfer: true          # Use non-blocking GPU data transfer
+  efficient_validation: true          # Use memory-efficient validation
+  
+  # Logging settings
+  log_interval: 10                     # Log training metrics every N steps
+  tensorboard: true                    # Enable TensorBoard logging
+  wandb: false                         # Enable Weights & Biases logging
+  
+  # Scheduler parameters (scheduler-specific)
+  scheduler_params:
+    # For cosine scheduler:
+    T_max: 100                         # Maximum number of iterations
+    eta_min: 0.00001                   # Minimum learning rate
+
+# ============================================================================
+# OUTPUT CONFIGURATION
+# ============================================================================
+output:
+  # Basic output settings
+  output_dir: "training_output/yolo_builtin"
+  experiment_name: "yolo_builtin"
+  save_best_only: true                 # Save only the best model
+  save_last: true                      # Save the last checkpoint
+  
+  # What to save in checkpoints
+  save_model: true                     # Save model state dict
+  save_optimizer: true                 # Save optimizer state
+  save_scheduler: true                 # Save scheduler state
+  save_logs: true                      # Save training logs
+  save_config: true                    # Save configuration file
+  
+  # Weight file format
+  weight_format: "pt"                  # YOLO format (.pt files)
+  
+  # Performance optimizations
+  save_lightweight: true               # Save lightweight deployment weights
+  keep_recent_checkpoints: 3           # Only keep N recent full checkpoints
+
+# ============================================================================
+# EXTERNAL TRAINER CONFIGURATION
+# ============================================================================
+external_trainer:
+  enabled: true                        # Enable external trainer (YOLO)
+  script_path: "train_system/custom_trainers/yolo_trainer.py"
+  class_name: "YOLOBuiltinTrainer"     # Use YOLO's built-in train function
+  
+  # Parameters to pass to external trainer
+  parameters:
+    # YOLO-specific training parameters
+    yolo_params:
+      cos_lr: true                     # Cosine learning rate scheduler
+      mixup: 0.1                       # Mixup augmentation strength
+      copy_paste: 0.1                  # Copy-paste augmentation
+      degrees: 15.0                    # Image rotation degrees
+      translate: 0.1                   # Image translation
+      scale: 0.5                       # Image scale variation
+      shear: 0.0                       # Image shear
+      perspective: 0.0                 # Image perspective
+      flipud: 0.0                      # Image flip up-down probability
+      fliplr: 0.5                      # Image flip left-right probability
+      mosaic: 1.0                      # Mosaic augmentation probability
+      hsv_h: 0.015                     # Image HSV-Hue augmentation
+      hsv_s: 0.7                       # Image HSV-Saturation augmentation  
+      hsv_v: 0.4                       # Image HSV-Value augmentation
+      # Additional YOLO parameters
+      close_mosaic: 10                 # Epochs to close mosaic augmentation
+      amp: true                        # Automatic Mixed Precision
+      fraction: 1.0                    # Dataset fraction to train on
+      profile: false                   # Profile ONNX and TensorRT speeds
+      freeze: null                     # Freeze layers (list of layer indices)
+      multi_scale: false               # Multi-scale training
+      overlap_mask: true               # Overlap masks during training
+      mask_ratio: 4                    # Mask downsample ratio
+      dropout: 0.0                     # Use dropout regularization
+      val: true                        # Validate/test during training
+  
+  # Override settings (what external trainer handles)
+  override_optimizer: true             # External trainer handles optimizer
+  override_scheduler: true             # External trainer handles scheduler
+  override_loss: true                  # External trainer handles loss function
+  override_saving: true                # External trainer handles checkpoint saving
+
+# ============================================================================
+# SYSTEM SETTINGS
+# ============================================================================
+device: "auto"                         # Options: "auto", "cpu", "cuda", "cuda:0", etc.
+seed: 42                              # Random seed for reproducibility
+deterministic: false                  # Enable deterministic operations (slower but reproducible)
+
+# ============================================================================
+# METADATA
+# ============================================================================
+description: "YOLO classification using built-in training pipeline with complete configuration"
+tags:
+  - "yolo"
+  - "classification"
+  - "builtin"
+  - "external_trainer"
+  - "complete_config"

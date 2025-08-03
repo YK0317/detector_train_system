@@ -1,0 +1,71 @@
+# Quick Reference Configuration Template
+# Essential fields with sensible defaults for common use cases
+
+# ============================================================================
+# ESSENTIAL CONFIGURATION
+# ============================================================================
+
+model:
+  name: "my_model"
+  type: "torchvision"                  # or "file", "timm"
+  architecture: "resnet18"             # for torchvision/timm
+  # path: "models/my_model.py"         # for type="file"
+  # class_name: "MyModel"              # for type="file"
+  pretrained: true
+  num_classes: 2
+
+data:
+  name: "my_dataset"
+  type: "folder"
+  train_path: "data/train"
+  val_path: "data/val"
+  img_size: 224
+  batch_size: 32
+
+training:
+  epochs: 20
+  learning_rate: 0.001
+  optimizer: "adamw"
+  scheduler: "cosine"
+  
+  # Performance optimizations (optional)
+  metrics_frequency: 100               # Calculate metrics every 100 steps
+  efficient_validation: true          # Memory-efficient validation
+  non_blocking_transfer: true         # Faster GPU transfer
+
+output:
+  output_dir: "training_output"
+  experiment_name: "my_experiment"
+  save_lightweight: true              # Save deployment-ready weights
+  keep_recent_checkpoints: 3          # Keep only 3 recent checkpoints
+
+# ============================================================================
+# COMMON VARIATIONS
+# ============================================================================
+
+# For custom model files:
+# model:
+#   type: "file"
+#   path: "models/my_custom_model.py"
+#   class_name: "MyCustomModel"
+
+# For class-based datasets:
+# data:
+#   type: "class_folders"
+#   real_path: "data/real"
+#   fake_path: "data/fake"
+
+# For high-performance training:
+# training:
+#   metrics_frequency: 200             # Less frequent metrics
+#   checkpoint_frequency: 10           # Less frequent checkpoints
+#   mixed_precision: true              # Use AMP for speed
+# data:
+#   batch_size: 64                     # Larger batches
+
+# For development/debugging:
+# training:
+#   metrics_frequency: 0               # Metrics every step
+#   log_interval: 1                    # Log every step
+# output:
+#   keep_recent_checkpoints: 0         # Keep all checkpoints

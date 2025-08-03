@@ -1,0 +1,149 @@
+# Capsule-Forensics-v2 Configuration Template
+# Configuration for training Capsule-Forensics-v2 model with external adapter
+
+# ============================================================================
+# MODEL CONFIGURATION
+# ============================================================================
+model:
+  name: "capsule_forensics_v2"
+  type: "file"
+  path: "Capsule-Forensics-v2/model_big.py"
+  class_name: "CapsuleNet"
+  num_classes: 2
+  
+  # Model-specific parameters for Capsule-Forensics-v2
+  model_args:
+    gpu_id: 0                          # GPU ID (0 for first GPU, -1 for CPU)
+    num_routing: 3                     # Number of routing iterations
+  
+  # External adapter for handling Capsule network outputs
+  external_adapter:
+    script_path: "custom_adapters/capsule_forensics_adapter.py"
+    class_name: "CapsuleForensicsAdapter"
+    required_packages: []              # No additional packages needed
+    parameters: {}                     # No additional parameters needed
+
+# ============================================================================
+# DATA CONFIGURATION
+# ============================================================================
+data:
+  name: "deepfake_detection"
+  type: "class_folders"
+  train_path: "data/train"
+  val_path: "data/val"
+  
+  # Image processing for Capsule networks
+  img_size: 300                        # Capsule-Forensics-v2 expects 300x300 images
+  batch_size: 16                       # Smaller batch due to model complexity
+  num_workers: 4
+  pin_memory: true
+  shuffle_train: true
+  
+  # Data augmentation suitable for forensics tasks
+  augmentation:
+    enabled: true
+    horizontal_flip: true
+    rotation: 5                        # Small rotation to preserve forensic features
+    color_jitter: false                # Avoid color changes that might affect forensics
+    normalize: true
+    normalization_mean: [0.485, 0.456, 0.406]  # ImageNet normalization
+    normalization_std: [0.229, 0.224, 0.225]
+    
+    # Conservative augmentation for forensics
+    brightness: 0.1                    # Slight brightness variation
+    contrast: 0.1                      # Slight contrast variation
+    gaussian_blur: false               # Avoid blur that might remove forensic traces
+
+# ============================================================================
+# TRAINING CONFIGURATION
+# ============================================================================
+training:
+  epochs: 100                          # Capsule networks often need more epochs
+  learning_rate: 0.0001               # Conservative learning rate
+  weight_decay: 0.00001               # Light regularization
+  optimizer: "adam"                    # Adam works well with capsule networks
+  scheduler: "reduce_on_plateau"       # Adaptive learning rate reduction
+  
+  # Training settings optimized for capsule networks
+  gradient_clipping: 1.0
+  mixed_precision: false               # May not work well with capsule routing
+  accumulation_steps: 2                # Simulate larger batch size
+  
+  # Validation and monitoring
+  val_frequency: 1
+  save_frequency: 10
+  early_stopping_patience: 20          # Capsule networks can be slow to converge
+  
+  # Performance settings
+  metrics_frequency: 50                # Reduced frequency due to model complexity
+  checkpoint_frequency: 10
+  log_interval: 10
+  
+  # Scheduler parameters for plateau reduction
+  scheduler_params:
+    factor: 0.5                        # Reduce LR by half
+    patience: 10                       # Wait 10 epochs before reducing
+    threshold: 0.001                   # Minimum improvement threshold
+
+# ============================================================================
+# OUTPUT CONFIGURATION
+# ============================================================================
+output:
+  output_dir: "capsule_forensics_output"
+  experiment_name: "capsule_v2_training"
+  save_best_only: true
+  save_last: true
+  
+  # Checkpoint settings
+  save_model: true
+  save_optimizer: true
+  save_scheduler: true
+  save_logs: true
+  save_config: true
+  
+  # Optimized for deployment
+  save_lightweight: true
+  keep_recent_checkpoints: 5
+
+# ============================================================================
+# SYSTEM SETTINGS
+# ============================================================================
+device: "auto"                         # Auto-detect GPU/CPU
+seed: 42
+deterministic: false                   # Set to true for reproducible results (slower)
+
+# ============================================================================
+# METADATA
+# ============================================================================
+description: "Capsule-Forensics-v2 training for deepfake detection with external adapter"
+tags:
+  - "capsule"
+  - "forensics"
+  - "deepfake"
+  - "external_adapter"
+
+# ============================================================================
+# USAGE NOTES
+# ============================================================================
+
+# Prerequisites:
+# 1. Clone Capsule-Forensics-v2 repository:
+#    git clone https://github.com/nii-yamagishilab/Capsule-Forensics-v2.git
+#
+# 2. Ensure custom adapter exists:
+#    custom_adapters/capsule_forensics_adapter.py
+#
+# 3. Prepare data in class folder structure:
+#    data/
+#    ├── train/
+#    │   ├── real/
+#    │   └── fake/
+#    └── val/
+#        ├── real/
+#        └── fake/
+
+# Training Command:
+# train-system train configs/capsule_forensics_config.yaml
+
+# Or using the helper script:
+# python train_capsule_forensics.py --data_path=data --epochs=100 --clone

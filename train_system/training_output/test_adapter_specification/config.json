@@ -1,0 +1,84 @@
+{
+  "model": {
+    "name": "YOLO_Test",
+    "type": "file",
+    "path": "../models/yolo_standalone.py",
+    "class_name": "YOLOStandalone",
+    "architecture": null,
+    "pretrained": false,
+    "num_classes": 2,
+    "pretrained_weights": null,
+    "strict_loading": true,
+    "load_optimizer": false,
+    "load_scheduler": false,
+    "img_size": 256,
+    "dropout": 0.1,
+    "freeze_backbone": false,
+    "model_args": {},
+    "adapter": "standard",
+    "adapter_config": {}
+  },
+  "data": {
+    "name": "URS_ClassFolders_Test",
+    "type": "class_folders",
+    "train_path": "",
+    "val_path": "",
+    "test_path": null,
+    "class_folders": {},
+    "real_path": "C:\\Users\\mingw\\Desktop\\training\\URS-train\\train\\real",
+    "fake_path": "C:\\Users\\mingw\\Desktop\\training\\URS-train\\train\\fake",
+    "img_size": 256,
+    "batch_size": 8,
+    "num_workers": 2,
+    "pin_memory": true,
+    "shuffle_train": true,
+    "augmentation": {
+      "horizontal_flip": true,
+      "rotation": 10,
+      "color_jitter": true,
+      "normalize": true
+    },
+    "max_samples": 5,
+    "class_mapping": {
+      "real": 0,
+      "fake": 1
+    }
+  },
+  "training": {
+    "epochs": 1,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0005,
+    "optimizer": "adamw",
+    "scheduler": "cosine",
+    "gradient_clipping": 1.0,
+    "mixed_precision": false,
+    "accumulation_steps": 1,
+    "val_frequency": 1,
+    "save_frequency": 1,
+    "early_stopping_patience": 10,
+    "log_interval": 5,
+    "tensorboard": true,
+    "wandb": false,
+    "scheduler_params": {}
+  },
+  "output": {
+    "output_dir": "training_output",
+    "experiment_name": "test_adapter_specification",
+    "save_best_only": true,
+    "save_last": true,
+    "save_model": true,
+    "save_optimizer": true,
+    "save_scheduler": true,
+    "save_logs": true,
+    "save_config": true
+  },
+  "device": "auto",
+  "seed": 42,
+  "deterministic": false,
+  "description": "Test adapter specification with default to AutoAdapter",
+  "tags": [
+    "test",
+    "adapter",
+    "class_folders"
+  ]
+}

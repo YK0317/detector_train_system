@@ -1,0 +1,366 @@
+# Complete Configuration Template for Train System
+# This template includes ALL supported fields with their default values and descriptions
+
+# ============================================================================
+# MODEL CONFIGURATION
+# ============================================================================
+model:
+  # Basic model information
+  name: "model_name"                    # Display name for the model
+  type: "file"                         # Options: "file", "torchvision", "timm", "custom"
+  path: "models/your_model.py"         # Path to model file (required for type="file")
+  class_name: "YourModelClass"         # Class name in the file (required for type="file")
+  architecture: null                   # For torchvision/timm models (e.g., "resnet18", "efficientnet_b0")
+  pretrained: true                     # Use pretrained weights (for torchvision/timm)
+  num_classes: 2                       # Number of output classes
+  
+  # Pretrained weights configuration
+  pretrained_weights: null             # Path to pretrained weights (.pth, .pt file)
+  strict_loading: true                 # Whether to strictly load all parameters
+  load_optimizer: false                # Whether to load optimizer state from checkpoint
+  load_scheduler: false                # Whether to load scheduler state from checkpoint
+  
+  # Model-specific parameters
+  img_size: 224                        # Input image size
+  dropout: 0.1                         # Dropout rate
+  freeze_backbone: false               # Whether to freeze backbone layers
+  
+  # Additional model arguments (passed to model constructor)
+  model_args:
+    # Example model-specific arguments:
+    # vit_arch: "base"                 # For vision transformers
+    # drop_path_rate: 0.1              # For models with drop path
+    # channels: [64, 128, 256, 512]    # For custom architectures
+  
+  # Adapter configuration (optional, defaults to AutoAdapter)
+  adapter: null                        # Options: "auto", "standard", "logits_features", "dict", "external", etc.
+  adapter_config:                      # Additional adapter parameters
+    # feature_dim: 512                 # For feature-based adapters
+    # normalize_features: true         # Feature normalization
+  
+  # External adapter configuration (for custom model output handling)
+  external_adapter:
+    script_path: null                  # Path to external adapter script (e.g., "custom_adapters/my_adapter.py")
+    class_name: null                   # Name of adapter class (e.g., "MyCustomAdapter")
+    required_packages: []              # Additional packages required by the adapter
+    parameters: {}                     # Additional parameters to pass to adapter constructor
+
+# ============================================================================
+# DATA CONFIGURATION
+# ============================================================================
+data:
+  # Basic dataset information
+  name: "dataset_name"                 # Display name for the dataset
+  type: "folder"                       # Options: "folder", "class_folders", "csv", "json", "custom"
+  train_path: "data/train"             # Path to training data
+  val_path: "data/val"                 # Path to validation data
+  test_path: null                      # Path to test data (optional)
+  
+  # Class folder configuration (for type="class_folders")
+  class_folders:                       # Map class names to folder paths
+    # real: "data/real_images"
+    # fake: "data/fake_images"
+  real_path: null                      # Direct path to real class folder
+  fake_path: null                      # Direct path to fake class folder
+  
+  # Data processing settings
+  img_size: 224                        # Image size for preprocessing
+  batch_size: 32                       # Training batch size
+  num_workers: 4                       # Number of data loader workers
+  pin_memory: true                     # Pin memory for faster GPU transfer
+  shuffle_train: true                  # Shuffle training data
+  
+  # Data augmentation settings
+  augmentation:
+    enabled: true                      # Master switch to enable/disable all augmentations
+    horizontal_flip: true              # Random horizontal flip
+    rotation: 10                       # Random rotation (degrees)
+    color_jitter: true                 # Color jittering
+    normalize: true                    # Apply normalization
+    normalization_mean: [0.485, 0.456, 0.406]  # Normalization mean values (RGB)
+    normalization_std: [0.229, 0.224, 0.225]   # Normalization std values (RGB)
+    
+    # Additional augmentation options (now fully supported):
+    vertical_flip: false               # Random vertical flip
+    brightness: 0.0                    # Brightness adjustment (0 = disabled, >0 = enabled)
+    contrast: 0.0                      # Contrast adjustment (0 = disabled, >0 = enabled)
+    saturation: 0.0                    # Saturation adjustment (0 = disabled, >0 = enabled)
+    hue: 0.0                          # Hue adjustment (0 = disabled, >0 = enabled)
+    gaussian_blur: false               # Random Gaussian blur
+    blur_kernel_size: 3                # Blur kernel size (odd number)
+    blur_sigma: [0.1, 2.0]            # Blur sigma range [min, max]
+    random_crop: false                 # Random resized crop (alternative to resize)
+    random_crop_size: null             # Crop size (null = 90% of img_size)
+    center_crop: false                 # Center crop for validation/test
+    center_crop_size: null             # Center crop size (null = img_size)
+    # Note: When enabled=false, only resize, toTensor and normalize (if enabled) are applied
+    # Note: color_jitter=true overrides individual brightness/contrast/saturation/hue settings
+  
+  # Dataset-specific parameters
+  max_samples: null                    # Limit number of samples (null = all)
+  class_mapping:                       # Map class names to indices
+    real: 0
+    fake: 1
+
+# ============================================================================
+# TRAINING CONFIGURATION
+# ============================================================================
+training:
+  # Basic training parameters
+  epochs: 20                           # Number of training epochs
+  learning_rate: 0.0001                # Initial learning rate
+  weight_decay: 0.01                   # Weight decay (L2 regularization)
+  optimizer: "adamw"                   # Options: "adam", "adamw", "sgd"
+  scheduler: "cosine"                  # Options: "cosine", "step", "plateau", "none"
+  
+  # Training settings
+  gradient_clipping: 1.0               # Gradient clipping threshold
+  mixed_precision: false               # Use automatic mixed precision (AMP)
+  accumulation_steps: 1                # Gradient accumulation steps
+  
+  # Validation and saving frequencies
+  val_frequency: 1                     # Validate every N epochs
+  save_frequency: 5                    # Save checkpoint every N epochs
+  early_stopping_patience: 10          # Early stopping patience (epochs)
+  
+  # ========================================================================
+  # PERFORMANCE OPTIMIZATIONS (NEW)
+  # ========================================================================
+  metrics_frequency: 100               # Calculate detailed metrics every N steps (0 = every step)
+  checkpoint_frequency: 5              # Save full checkpoint every N epochs
+  non_blocking_transfer: true          # Use non-blocking GPU data transfer
+  efficient_validation: true          # Use memory-efficient validation
+  
+  # Logging settings
+  log_interval: 10                     # Log training metrics every N steps
+  tensorboard: true                    # Enable TensorBoard logging
+  wandb: false                         # Enable Weights & Biases logging
+  
+  # Scheduler parameters (scheduler-specific)
+  scheduler_params:
+    # For step scheduler:
+    # step_size: 30
+    # gamma: 0.1
+    # For plateau scheduler:
+    # factor: 0.5
+    # patience: 5
+    # threshold: 0.0001
+    # For cosine scheduler:
+    # T_max: 50
+    # eta_min: 0.00001
+
+# ============================================================================
+# OUTPUT CONFIGURATION
+# ============================================================================
+output:
+  # Basic output settings
+  output_dir: "training_output"        # Base output directory
+  experiment_name: "experiment"        # Experiment subdirectory name
+  save_best_only: true                 # Save only the best model
+  save_last: true                      # Save the last checkpoint
+  
+  # What to save in checkpoints
+  save_model: true                     # Save model state dict
+  save_optimizer: true                 # Save optimizer state
+  save_scheduler: true                 # Save scheduler state
+  save_logs: true                      # Save training logs
+  save_config: true                    # Save configuration file
+  
+  # Weight file format
+  weight_format: "auto"                # Options: "auto", "pth", "pt"
+  
+  # ========================================================================
+  # PERFORMANCE OPTIMIZATIONS (NEW)
+  # ========================================================================
+  save_lightweight: true              # Save lightweight deployment weights
+  keep_recent_checkpoints: 3          # Only keep N recent full checkpoints (0 = keep all)
+
+# ============================================================================
+# EXTERNAL TRAINER CONFIGURATION (OPTIONAL)
+# ============================================================================
+external_trainer:
+  enabled: true                       # Enable external trainer
+  script_path: null                    # Path to external training script
+  class_name: null                     # Name of trainer class (auto-detect if null)
+  name: "yolobuiltin"                           # Registry name for auto-discovery (NEW)
+  
+  # Parameters to pass to external trainer
+  parameters:
+    # Example parameters:
+    # custom_param1: "value1"
+    # custom_param2: 42
+  
+  # Override settings (what external trainer handles)
+  override_optimizer: false            # External trainer handles optimizer
+  override_scheduler: false            # External trainer handles scheduler
+  override_loss: false                 # External trainer handles loss function
+  override_saving: false               # External trainer handles checkpoint saving
+
+# ============================================================================
+# REGISTRY CONFIGURATION (AUTO-DISCOVERY)
+# ============================================================================
+registry:
+  auto_scan: true                      # Enable automatic component scanning
+  verbose: false                       # Show detailed registry information
+  force_rescan: false                  # Force complete rescan even if already scanned
+  adapter_paths: []                    # Additional paths to scan for adapters
+    # - "my_custom_adapters"
+    # - "/path/to/external/adapters"
+  trainer_paths: []                    # Additional paths to scan for trainers
+    # - "my_custom_trainers"
+    # - "/path/to/external/trainers"
+
+# ============================================================================
+# SYSTEM SETTINGS
+# ============================================================================
+device: "auto"                         # Options: "auto", "cpu", "cuda", "cuda:0", etc.
+seed: 42                              # Random seed for reproducibility
+deterministic: false                  # Enable deterministic operations (slower but reproducible)
+
+# ============================================================================
+# METADATA
+# ============================================================================
+description: "Complete configuration template with all supported fields"
+tags:                                 # List of tags for organization
+  - "template"
+  - "complete"
+  - "example"
+
+# ============================================================================
+# CONFIGURATION EXAMPLES FOR DIFFERENT USE CASES
+# ============================================================================
+
+# Example 1: Registry-Based Adapter Configuration (Recommended)
+# Uncomment and modify for models with custom output formats:
+#
+# model:
+#   name: "capsule_forensics_v2"
+#   type: "file"
+#   path: "Capsule-Forensics-v2/model_big.py"
+#   class_name: "CapsuleNet"
+#   num_classes: 2
+#   adapter: "capsuleforensics"          # Use registry name instead of manual config
+
+# Example 1b: Legacy External Adapter Configuration
+# Uncomment and modify for manual adapter loading:
+#
+# model:
+#   name: "capsule_forensics_v2"
+#   type: "file"
+#   path: "Capsule-Forensics-v2/model_big.py"
+#   class_name: "CapsuleNet"
+#   num_classes: 2
+#   external_adapter:
+#     script_path: "custom_adapters/capsule_forensics_adapter.py"
+#     class_name: "CapsuleForensicsAdapter"
+#     required_packages: []
+#     parameters: {}
+
+# Example 2: High-Performance Configuration
+# Uncomment and modify for maximum performance:
+#
+# training:
+#   metrics_frequency: 200             # Reduced overhead
+#   checkpoint_frequency: 10           # Less frequent full checkpoints
+#   non_blocking_transfer: true        # Faster data transfer
+#   efficient_validation: true         # Memory-efficient validation
+#   val_frequency: 2                   # Validate every 2 epochs
+#   mixed_precision: true              # Use AMP for speed
+#
+# output:
+#   save_lightweight: true             # Fast deployment weights
+#   keep_recent_checkpoints: 3         # Disk space optimization
+#
+# data:
+#   batch_size: 64                     # Larger batch size
+#   num_workers: 8                     # More workers
+#   pin_memory: true                   # Faster GPU transfer
+
+# Example 3: Development/Debugging Configuration
+# Uncomment and modify for maximum monitoring:
+#
+# training:
+#   metrics_frequency: 0               # Calculate metrics every step
+#   checkpoint_frequency: 1            # Save checkpoint every epoch
+#   log_interval: 1                    # Log every step
+#   val_frequency: 1                   # Validate every epoch
+#
+# output:
+#   save_lightweight: false            # Save full checkpoints
+#   keep_recent_checkpoints: 0         # Keep all checkpoints
+
+# Example 4: Resource-Constrained Configuration
+# Uncomment and modify for minimal resource usage:
+#
+# training:
+#   metrics_frequency: 500             # Minimal overhead
+#   checkpoint_frequency: 20           # Infrequent saves
+#   mixed_precision: true              # Reduce memory usage
+#   accumulation_steps: 4              # Simulate larger batches
+#
+# data:
+#   batch_size: 16                     # Smaller batch size
+#   num_workers: 2                     # Fewer workers
+#
+# output:
+#   save_lightweight: true             # Minimal checkpoint size
+#   keep_recent_checkpoints: 1         # Keep only latest checkpoint
+
+# ============================================================================
+# FIELD DESCRIPTIONS AND VALIDATION RULES
+# ============================================================================
+
+# Model Type Options:
+# - "file": Load model from Python file (requires path and class_name)
+# - "torchvision": Use torchvision model (requires architecture)
+# - "timm": Use timm model (requires architecture)
+# - "custom": Custom model loading logic
+
+# Data Type Options:
+# - "folder": Standard folder structure (train/val subdirectories)
+# - "class_folders": Separate folders for each class
+# - "csv": CSV file with image paths and labels
+# - "json": JSON file with dataset information
+# - "custom": Custom dataset loading logic
+
+# Optimizer Options:
+# - "adam": Adam optimizer
+# - "adamw": AdamW optimizer (recommended)
+# - "sgd": Stochastic Gradient Descent
+
+# Scheduler Options:
+# - "cosine": Cosine annealing
+# - "step": Step learning rate decay
+# - "plateau": Reduce on plateau
+# - "none": No learning rate scheduling
+
+# Adapter Options:
+# - "auto": Automatically detect adapter based on model output
+# - "standard": Standard adapter for simple model outputs
+# - "logits_features": Adapter for models returning (logits, features)
+# - "dict": Adapter for models returning dictionary outputs
+# - "external": Use external adapter specified in external_adapter section
+
+# External Adapter Configuration:
+# - script_path: Path to Python file containing adapter class
+# - class_name: Name of adapter class in the file
+# - required_packages: List of additional packages the adapter needs
+# - parameters: Dictionary of parameters to pass to adapter constructor
+
+# Device Options:
+# - "auto": Automatically detect best device
+# - "cpu": Force CPU usage
+# - "cuda": Use first available GPU
+# - "cuda:0", "cuda:1", etc.: Use specific GPU
+
+# Validation Rules:
+# - epochs > 0
+# - learning_rate > 0
+# - batch_size > 0
+# - num_workers >= 0
+# - metrics_frequency >= 0 (0 = every step)
+# - checkpoint_frequency > 0
+# - keep_recent_checkpoints >= 0 (0 = keep all)
+# - If external_adapter is specified, script_path and class_name are required
+# - external_adapter.script_path must be a valid Python file
+# - external_adapter.class_name must exist in the specified script

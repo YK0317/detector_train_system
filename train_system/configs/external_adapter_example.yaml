@@ -1,0 +1,123 @@
+# External Adapter Example Configuration
+# This template shows how to use external adapters with custom models
+
+# ============================================================================
+# MODEL CONFIGURATION WITH EXTERNAL ADAPTER
+# ============================================================================
+model:
+  name: "custom_model_with_adapter"
+  type: "file"
+  path: "path/to/your/model.py"
+  class_name: "YourModelClass"
+  num_classes: 2
+  
+  # External adapter configuration
+  external_adapter:
+    script_path: "custom_adapters/your_adapter.py"  # Path to adapter script
+    class_name: "YourCustomAdapter"                 # Adapter class name
+    required_packages: []                           # Additional packages if needed
+    parameters:                                     # Parameters for adapter constructor
+      # feature_dim: 512
+      # normalize_outputs: true
+
+# ============================================================================
+# BASIC CONFIGURATION
+# ============================================================================
+data:
+  name: "your_dataset"
+  type: "class_folders"
+  train_path: "data/train"
+  val_path: "data/val"
+  img_size: 224
+  batch_size: 32
+  
+  augmentation:
+    enabled: true
+    horizontal_flip: true
+    normalize: true
+
+training:
+  epochs: 20
+  learning_rate: 0.001
+  optimizer: "adamw"
+  val_frequency: 1
+
+output:
+  output_dir: "custom_model_output"
+  save_best_only: true
+
+device: "auto"
+seed: 42
+
+description: "Example configuration for external adapter usage"
+tags: ["external_adapter", "example"]
+
+# ============================================================================
+# CREATING YOUR CUSTOM ADAPTER
+# ============================================================================
+
+# Your adapter file (custom_adapters/your_adapter.py) should look like:
+#
+# import torch
+# import torch.nn.functional as F
+# 
+# # Import the base adapter class
+# try:
+#     from train_system.adapters import ModelAdapter
+# except ImportError:
+#     # Fallback base class
+#     class ModelAdapter:
+#         def __init__(self, model=None):
+#             self.model = model
+#         def extract_logits(self, outputs): pass
+#         def extract_features(self, outputs): pass
+#         def get_predictions(self, outputs): pass
+#         def get_prediction_dict(self, outputs): pass
+# 
+# class YourCustomAdapter(ModelAdapter):
+#     """Custom adapter for your model's output format"""
+#     
+#     def __init__(self, model=None, **kwargs):
+#         super().__init__(model)
+#         # Handle any additional parameters
+#     
+#     def extract_logits(self, model_output):
+#         """Extract classification logits from model output"""
+#         # Implement based on your model's output format
+#         return model_output  # or model_output[0], etc.
+#     
+#     def extract_features(self, model_output):
+#         """Extract features from model output"""
+#         # Implement based on your model's output format
+#         return model_output  # or flatten/process as needed
+#     
+#     def get_predictions(self, model_output):
+#         """Get prediction dictionary from model output"""
+#         logits = self.extract_logits(model_output)
+#         probs = F.softmax(logits, dim=1)
+#         _, preds = torch.max(probs, 1)
+#         
+#         return {
+#             'logits': logits,
+#             'probabilities': probs,
+#             'predictions': preds
+#         }
+#     
+#     def get_prediction_dict(self, model_output):
+#         """Required abstract method - can alias to get_predictions"""
+#         return self.get_predictions(model_output)
+
+# ============================================================================
+# USAGE NOTES
+# ============================================================================
+
+# 1. Create your adapter file in the custom_adapters/ directory
+# 2. Implement the required methods based on your model's output format
+# 3. Update the configuration to point to your adapter
+# 4. Run training normally - the adapter will be loaded automatically
+
+# Common model output formats and how to handle them:
+# - Single tensor: return as-is for logits
+# - Tuple (logits, features): extract appropriate elements
+# - Dictionary: extract by key names
+# - Complex nested structures: implement custom extraction logic
