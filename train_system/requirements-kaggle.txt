@@ -1,0 +1,43 @@
+# Requirements for Kaggle environment
+# Install with: !pip install -r requirements-kaggle.txt
+
+# Core ML libraries (usually pre-installed in Kaggle but specify for consistency)
+torch>=1.9.0,<2.5.0
+torchvision>=0.10.0,<0.20.0
+numpy>=1.21.0,<1.27.0
+
+# Essential dependencies
+pandas>=1.3.0,<2.3.0
+Pillow>=8.3.0,<11.0.0
+PyYAML>=6.0,<7.0
+scikit-learn>=1.0.0,<2.0.0
+
+# Visualization (important for Kaggle competitions)
+matplotlib>=3.4.0,<4.0.0
+seaborn>=0.11.0,<1.0.0
+plotly>=5.0.0,<6.0.0
+
+# Monitoring and logging
+tensorboard>=2.7.0,<3.0.0
+tqdm>=4.62.0,<5.0.0
+
+# Computer vision
+opencv-python>=4.5.0,<5.0.0
+
+# Build tools
+setuptools>=61.0
+wheel>=0.37.0
+packaging>=21.0
+
+# Optional: Additional ML libraries commonly used in Kaggle
+# xgboost>=1.6.0,<2.0.0
+# lightgbm>=3.3.0,<4.0.0
+# catboost>=1.0.0,<2.0.0
+
+# Optional: YOLO support
+# ultralytics>=8.0.0,<9.0.0
+
+# Optional: Advanced ML libraries
+# transformers>=4.20.0,<5.0.0
+# timm>=0.6.0,<1.0.0
+# albumentations>=1.2.0,<2.0.0
