@@ -24,8 +24,8 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Run install_universal.py
-      run: python install_universal.py
+      run: cd train_system; python install_universal.py
 
     - name: Run tests
       run: |
-        if [ -f pytest.ini ] || [ -d tests ]; then pytest; fi
+        if [ -f pytest.ini ] || [ -d tests ]; then cd train_system; pytest; fi
