@@ -10,7 +10,7 @@ model:
   name: "yolo_classification"
   type: "custom"                       # Use custom type since YOLO trainer will handle model creation
   path: null                           # YOLO trainer will handle model initialization
-  class_name: "YOLODetector"
+  class_name: "YOLO"
   architecture: null                   # Not applicable for YOLO
   pretrained: true                     # YOLO will use pretrained weights
   num_classes: 2
@@ -95,6 +95,13 @@ data:
   class_mapping:
     real: 0
     fake: 1
+  
+  # Automatic train/val splitting configuration
+  # For YOLO external trainer: auto_split_enabled should be false since YOLO 
+  # handles train/val splitting internally using its own optimized methods
+  auto_split_enabled: false            # YOLO handles train/val split internally
+  train_split_ratio: 0.8              # Not used when auto_split_enabled: false
+  split_seed: 42                       # Not used when auto_split_enabled: false
     
 
 
@@ -103,7 +110,7 @@ data:
 # ============================================================================
 training:
   # Basic training parameters
-  epochs: 100
+  epochs: 2                            # Reduced for testing
   learning_rate: 0.001
   weight_decay: 0.0005
   optimizer: "adam"                    # Options: "adam", "adamw", "sgd"
@@ -165,8 +172,10 @@ output:
 # ============================================================================
 external_trainer:
   enabled: true                        # Enable external trainer (YOLO)
-  script_path: "train_system/custom_trainers/yolo_trainer.py"
-  class_name: "YOLOBuiltinTrainer"     # Use YOLO's built-in train function
+  name: "y_o_l_o_builtin"                  # Use robust YOLO trainer
+  skip_unified_data_loading: true     # YOLO handles its own data loading
+  script_path: "train_system/custom_trainers/yolo_trainer.py"  # Use robust trainer
+  class_name: "YOLOBuiltinTrainer"     # Use robust trainer class
   
   # Parameters to pass to external trainer
   parameters:
@@ -203,6 +212,17 @@ external_trainer:
   override_scheduler: true             # External trainer handles scheduler
   override_loss: true                  # External trainer handles loss function
   override_saving: true                # External trainer handles checkpoint saving
+
+# ============================================================================
+# REGISTRY CONFIGURATION (AUTO-DISCOVERY)
+# ============================================================================
+registry:
+  auto_scan: true                      # Enable automatic component scanning
+  verbose: false                       # Show detailed registry information
+  force_rescan: false                  # Force complete rescan
+  adapter_paths: []                    # Additional adapter search paths
+  trainer_paths:                       # Additional trainer search paths
+    - "train_system/custom_trainers"   # Include YOLO trainer location
 
 # ============================================================================
 # SYSTEM SETTINGS

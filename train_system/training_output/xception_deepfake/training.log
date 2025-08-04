@@ -1,0 +1,6 @@
+05:13:34 | Epoch   1 | Train: 0.4028/100.00% | Val: 0.6802/100.00% | Best: 100.00%
+05:13:47 | Epoch   2 | Train: 0.2027/80.00% | Val: 0.6704/100.00% | Best: 100.00%
+
+=== TRAINING COMPLETE ===
+Best Accuracy: 100.00%
+Total Time: 25.1s

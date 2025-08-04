@@ -10,7 +10,6 @@ recursive-include docs *.md *.rst *.txt
 include requirements.txt
 include requirements-dev.txt
 recursive-include train_system/configs *.yaml *.yml *.json
-recursive-include train_system/config/templates *.yaml *.yml *.json
 
 # Example files
 recursive-include examples *.py *.yaml *.yml *.json *.md

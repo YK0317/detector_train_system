@@ -1,0 +1,68 @@
+# Resume Training Configuration
+# This config demonstrates how to resume training from checkpoints
+
+model:
+  name: "xception_deepfake"
+  type: "file"
+  path: "./xception.py"
+  class_name: "Xception"
+  architecture: null
+  pretrained: false
+  
+  num_classes: 2
+  model_args:
+    num_classes: 2
+  
+  adapter: auto
+
+data:
+  name: "DeepfakeDetection"
+  type: "class_folders"
+  train_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\train"
+  val_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\validation"
+
+  class_folders:
+    real: "real"
+    fake: "fake"
+  
+  max_samples: 5
+  class_mapping:
+    real: 0
+    fake: 1
+  
+  img_size: 299
+
+  augmentation:
+    enabled: true
+    horizontal_flip: true
+    rotation: 10
+    color_jitter: true
+    normalize: true
+    normalization_mean: [0.5, 0.5, 0.5]
+    normalization_std: [0.5, 0.5, 0.5]
+
+training:
+  epochs: 10                               # Continue for more epochs
+  learning_rate: 0.001
+  optimizer: "adam"
+  weight_decay: 0.0001
+  
+  scheduler: "cosine"
+  scheduler_params:
+    eta_min: 0.00001
+  
+  # Resume from checkpoint
+  resume_from_checkpoint: "checkpoint_epoch_5.pth"
+  # Alternative options:
+  # resume_from_checkpoint: "./training_output/xception_deepfake/best_checkpoint.pth"
+  # resume_from_checkpoint: "./training_output/xception_deepfake/checkpoint_epoch_5.pth"
+
+output:
+  output_dir: "./training_output"
+  experiment_name: "xception_deepfake"
+
+device: "auto"
+seed: 42
+
+description: "Resume Xception training from checkpoint"
+tags: ["xception", "deepfake-detection", "resume-training"]

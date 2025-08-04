@@ -116,8 +116,6 @@ exclude = ["tests*", "examples*"]
 
 [tool.setuptools.package-data]
 train_system = [
-    "config/templates/*.yaml",
-    "config/templates/*.json",
     "configs/*.yaml",
     "configs/*.json",
     "examples/*.py",

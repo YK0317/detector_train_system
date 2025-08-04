@@ -1,0 +1,101 @@
+# Capsule-Forensics-v2 External Trainer Configuration
+# Uses original training methodology via external trainer
+
+# ============================================================================
+# MODEL CONFIGURATION
+# ============================================================================
+model:
+  name: "capsule_forensics_v2_external"
+  type: "custom"                       # External trainer handles model creation
+  path: null                           # External trainer will load model
+  class_name: "CapsuleNet"
+  num_classes: 2
+  
+  # Model-specific parameters
+  img_size: 300
+  dropout: 0.05
+  
+  # Additional model arguments
+  model_args:
+    gpu_id: 0                          # GPU ID (will fallback to CPU if not available)
+    disable_random: false              # Enable routing randomness
+    
+  # Use registry-based adapter
+  adapter: "capsule_forensics"
+
+# ============================================================================
+# DATA CONFIGURATION
+# ============================================================================
+data:
+  name: "FaceForensics++"
+  type: "folder"
+  train_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\train"  # Path to training data
+  val_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\validation"  # Path to validation data
+  
+  img_size: 300
+  batch_size: 32
+  num_workers: 4
+  
+  # Conservative augmentation for forensics
+  augmentation:
+    enabled: true
+    horizontal_flip: false
+    rotation: 0
+    color_jitter: false
+    normalize: true
+    normalization_mean: [0.485, 0.456, 0.406]
+    normalization_std: [0.229, 0.224, 0.225]
+  
+  class_mapping:
+    real: 0
+    fake: 1
+
+# ============================================================================
+# TRAINING CONFIGURATION
+# ============================================================================
+training:
+  epochs: 25
+  learning_rate: 0.0005
+  optimizer: "adam"
+
+# ============================================================================
+# OUTPUT CONFIGURATION
+# ============================================================================
+output:
+  output_dir: "training_output"
+  experiment_name: "capsule_forensics_external"
+  save_best_only: false                # Save all epochs (original behavior)
+
+# ============================================================================
+# EXTERNAL TRAINER CONFIGURATION
+# ============================================================================
+external_trainer:
+  enabled: true                        # Enable external trainer
+  name: "capsule_forensics"            # Will be registered after scanning
+  # Alternatively, use manual path:
+  # script_path: "train_system/custom_trainers/capsule_forensics_trainer.py"
+  # class_name: "CapsuleForensicsTrainer"
+  
+  parameters:
+    use_original_loss: true            # Use CapsuleLoss
+    save_format: "original"            # Save in .pt format
+    resume_epoch: 0                    # Start from scratch
+
+# ============================================================================
+# REGISTRY CONFIGURATION
+# ============================================================================
+registry:
+  auto_scan: true
+  trainer_paths:
+    - "train_system/custom_trainers"   # Scan for custom trainers
+  adapter_paths:
+    - "custom_adapters"
+
+# ============================================================================
+# SYSTEM SETTINGS
+# ============================================================================
+device: "auto"
+seed: 42
+
+description: "Capsule-Forensics-v2 with original training methodology via external trainer"
+tags: ["capsule-forensics", "external-trainer", "original-methodology"]

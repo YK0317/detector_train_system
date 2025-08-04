@@ -27,6 +27,13 @@ data:
     fake: 0
     real: 1
   
+  # Automatic train/val splitting configuration
+  # For YOLO external trainer: auto_split_enabled should be false since YOLO 
+  # handles train/val splitting internally using its own optimized methods
+  auto_split_enabled: false     # YOLO handles train/val split internally
+  train_split_ratio: 0.8       # Not used when auto_split_enabled: false
+  split_seed: 42               # Not used when auto_split_enabled: false
+  
   # Data augmentation (handled by YOLO internally)
   augmentation:
     normalize: true
@@ -57,6 +64,7 @@ output:
 # External trainer configuration - Use YOLO's built-in training
 external_trainer:
   enabled: true
+  skip_unified_data_loading: true     # YOLO handles its own data loading
   script_path: "custom_trainers/yolo_trainer.py"
   class_name: "YOLOBuiltinTrainer"  # Use YOLO's built-in train function
   

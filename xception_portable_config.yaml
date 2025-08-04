@@ -1,0 +1,70 @@
+# Portable Xception Configuration (Fixed Version)
+# This config uses relative paths and smart device detection
+
+model:
+  name: "xception_deepfake"
+  type: "file"
+  path: "./xception.py"                    # Relative path - will be resolved automatically
+  class_name: "Xception"
+  architecture: null
+  pretrained: false
+  
+  num_classes: 2
+  model_args:
+    num_classes: 2
+  
+  adapter: auto                            # Auto-detection instead of null
+
+data:
+  name: "DeepfakeDetection"
+  type: "class_folders"
+  train_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\train"
+  val_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\validation"
+  
+  class_folders:
+    real: "real"
+    fake: "fake"
+  
+  max_samples: 5
+  class_mapping:
+    real: 0
+    fake: 1
+  
+  # Smart defaults will be applied for missing values
+  img_size: 299
+  # batch_size, num_workers, pin_memory will be auto-configured based on device
+
+  augmentation:
+    enabled: true
+    horizontal_flip: true
+    rotation: 10
+    color_jitter: true
+    normalize: true
+    normalization_mean: [0.5, 0.5, 0.5]
+    normalization_std: [0.5, 0.5, 0.5]
+
+training:
+  epochs: 2
+  learning_rate: 0.001
+  optimizer: "adam"
+  weight_decay: 0.0001
+  
+  scheduler: "cosine"
+  scheduler_params:
+    # T_max will be auto-set to match epochs
+    eta_min: 0.00001
+  
+  # Smart defaults will be applied for missing values
+  # save_frequency, val_frequency, early_stopping_patience
+
+output:
+  output_dir: "./training_output"          # Relative path - will be created if needed
+  experiment_name: "xception_deepfake"
+  # Smart defaults for save_best_only, save_lightweight
+
+# Smart device detection - will choose best available device
+device: "auto"
+seed: 42
+
+description: "Portable Xception model for deepfake detection with intelligent configuration"
+tags: ["xception", "deepfake-detection", "binary-classification", "portable"]

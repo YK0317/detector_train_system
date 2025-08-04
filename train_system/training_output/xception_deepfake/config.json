@@ -1,0 +1,128 @@
+{
+  "model": {
+    "name": "xception_deepfake",
+    "type": "file",
+    "path": "C:\\Users\\mingw\\Desktop\\refactor\\xception.py",
+    "class_name": "Xception",
+    "architecture": null,
+    "pretrained": false,
+    "num_classes": 2,
+    "pretrained_weights": null,
+    "strict_loading": true,
+    "load_optimizer": false,
+    "load_scheduler": false,
+    "img_size": 224,
+    "dropout": 0.1,
+    "freeze_backbone": false,
+    "model_args": {
+      "num_classes": 2
+    },
+    "adapter": "auto",
+    "adapter_config": {},
+    "external_adapter": null
+  },
+  "data": {
+    "name": "DeepfakeDetection",
+    "type": "class_folders",
+    "train_path": "C:\\Users\\mingw\\Desktop\\training\\URS-train\\train",
+    "val_path": "C:\\Users\\mingw\\Desktop\\training\\URS-train\\validation",
+    "test_path": null,
+    "class_folders": {
+      "real": "real",
+      "fake": "fake"
+    },
+    "real_path": null,
+    "fake_path": null,
+    "img_size": 299,
+    "batch_size": 8,
+    "num_workers": 2,
+    "pin_memory": true,
+    "shuffle_train": true,
+    "augmentation": {
+      "enabled": true,
+      "horizontal_flip": true,
+      "rotation": 10,
+      "color_jitter": true,
+      "normalize": true,
+      "normalization_mean": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "normalization_std": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "max_samples": 5,
+    "class_mapping": {
+      "real": 0,
+      "fake": 1
+    },
+    "auto_split_enabled": true,
+    "train_split_ratio": 0.8,
+    "split_seed": 42,
+    "shuffle": true
+  },
+  "training": {
+    "epochs": 2,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "optimizer": "adam",
+    "scheduler": "cosine",
+    "gradient_clipping": 1.0,
+    "mixed_precision": false,
+    "accumulation_steps": 1,
+    "val_frequency": 1,
+    "save_frequency": 5,
+    "early_stopping_patience": 10,
+    "metrics_frequency": 100,
+    "checkpoint_frequency": 5,
+    "non_blocking_transfer": true,
+    "efficient_validation": true,
+    "log_interval": 10,
+    "tensorboard": true,
+    "wandb": false,
+    "scheduler_params": {
+      "T_max": 2,
+      "eta_min": 1e-05
+    },
+    "resume_from_checkpoint": null
+  },
+  "output": {
+    "output_dir": "C:\\Users\\mingw\\Desktop\\refactor\\train_system\\training_output",
+    "experiment_name": "xception_deepfake",
+    "save_best_only": false,
+    "save_last": true,
+    "save_model": true,
+    "save_optimizer": true,
+    "save_scheduler": true,
+    "save_logs": true,
+    "save_config": true,
+    "weight_format": "auto",
+    "save_lightweight": true,
+    "keep_recent_checkpoints": 3
+  },
+  "external_trainer": {
+    "enabled": false,
+    "script_path": null,
+    "class_name": null,
+    "name": null,
+    "skip_unified_data_loading": false,
+    "parameters": {},
+    "override_optimizer": false,
+    "override_scheduler": false,
+    "override_loss": false,
+    "override_saving": false
+  },
+  "device": "cpu",
+  "seed": 42,
+  "deterministic": false,
+  "description": "Xception model for deepfake detection",
+  "tags": [
+    "xception",
+    "deepfake-detection",
+    "binary-classification"
+  ]
+}

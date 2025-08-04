@@ -116,13 +116,32 @@ def dry_run_training(config_path: str, num_batches: int = 2) -> bool:
         
         # Initialize model, data, and optimizer for dry run (normally done in train())
         try:
-            print("🔧 Loading model for dry run...")
-            trainer.load_model()
-            print("🔧 Loading data for dry run...")
-            trainer.load_data() 
-            print("🔧 Setting up optimizer for dry run...")
-            trainer.setup_optimizer()
-            print("✅ All components initialized for dry run")
+            if is_external:
+                print("🎯 External trainer detected - skipping standard model loading")
+                
+                # Check if external trainer skips unified data loading
+                skip_data_loading = False
+                if hasattr(external_trainer_config, 'skip_unified_data_loading'):
+                    skip_data_loading = external_trainer_config.skip_unified_data_loading
+                elif isinstance(external_trainer_config, dict):
+                    skip_data_loading = external_trainer_config.get('skip_unified_data_loading', False)
+                
+                if skip_data_loading:
+                    print("🔧 External trainer handles its own data loading - skipping unified data loading")
+                    print("✅ External trainer setup completed for dry run")
+                else:
+                    print("🔧 Loading data for dry run...")
+                    trainer.load_data()
+                    print("✅ Data loading completed for external trainer")
+                # Skip model and optimizer setup for external trainers
+            else:
+                print("🔧 Loading model for dry run...")
+                trainer.load_model()
+                print("🔧 Loading data for dry run...")
+                trainer.load_data() 
+                print("🔧 Setting up optimizer for dry run...")
+                trainer.setup_optimizer()
+                print("✅ All components initialized for dry run")
         except Exception as e:
             print(f"❌ Failed to initialize components: {e}")
             import traceback
@@ -287,8 +306,13 @@ def dry_run_external_trainer(trainer, num_batches: int) -> bool:
                 print(f"   ⚠️  Training method '{method}': Not found")
         
         # Test external trainer model components if available
+        model_component_tested = False
+        
+        # Try different external trainer types
         if hasattr(external_trainer, 'capnet') and hasattr(external_trainer, 'vgg_ext'):
-            print(f"\n🧠 Testing External Trainer Model Components...")
+            # Capsule Forensics trainer
+            print(f"\n🧠 Testing Capsule Forensics Model Components...")
+            model_component_tested = True
             
             # Test with a single batch
             try:
@@ -315,13 +339,57 @@ def dry_run_external_trainer(trainer, num_batches: int) -> bool:
                         loss = external_trainer.capsule_loss(classes, targets)
                         print(f"      Loss value: {loss.item():.6f}")
                         
-                        print(f"   ✅ External trainer model forward pass successful")
+                        print(f"   ✅ Capsule Forensics model forward pass successful")
                     
                     break  # Only test one batch
                     
             except Exception as e:
-                print(f"   ⚠️  External trainer model test failed: {e}")
+                print(f"   ⚠️  Capsule Forensics model test failed: {e}")
                 print(f"   💡 This might be normal if models need special initialization")
+                
+        elif hasattr(external_trainer, 'yolo_model'):
+            # YOLO trainer
+            print(f"\n🧠 Testing YOLO Model Components...")
+            model_component_tested = True
+            
+            try:
+                yolo_model = external_trainer.yolo_model
+                print(f"      YOLO model type: {type(yolo_model).__name__}")
+                print(f"      YOLO model task: {getattr(yolo_model, 'task', 'unknown')}")
+                
+                # Check if we can access the underlying model
+                if hasattr(yolo_model, 'model'):
+                    pytorch_model = yolo_model.model
+                    print(f"      PyTorch model type: {type(pytorch_model).__name__}")
+                    print(f"   ✅ YOLO model structure validation successful")
+                else:
+                    print(f"   ⚠️  YOLO model does not have accessible PyTorch model")
+                    
+            except Exception as e:
+                print(f"   ❌ YOLO model validation failed: {e}")
+                return False
+        
+        # Generic model test for other external trainers
+        if not model_component_tested:
+            print(f"\n🧠 Testing Generic External Trainer Model...")
+            
+            # Check for common model attributes
+            model_attrs = ['model', 'net', 'network', 'classifier']
+            found_model = False
+            
+            for attr in model_attrs:
+                if hasattr(external_trainer, attr):
+                    model_obj = getattr(external_trainer, attr)
+                    if model_obj is not None:
+                        print(f"      Found model attribute: {attr}")
+                        print(f"      Model type: {type(model_obj).__name__}")
+                        found_model = True
+                        break
+            
+            if found_model:
+                print(f"   ✅ Generic model structure validation successful")
+            else:
+                print(f"   ⚠️  No standard model attributes found, but trainer may handle models internally")
         
         # Test validation data loader
         print(f"\n🧮 Testing validation data loader...")

@@ -1,0 +1,113 @@
+data:
+  augmentation:
+    color_jitter: true
+    enabled: true
+    horizontal_flip: true
+    normalization_mean:
+    - 0.5
+    - 0.5
+    - 0.5
+    normalization_std:
+    - 0.5
+    - 0.5
+    - 0.5
+    normalize: true
+    rotation: 10
+  auto_split_enabled: true
+  batch_size: 8
+  class_folders:
+    fake: fake
+    real: real
+  class_mapping:
+    fake: 1
+    real: 0
+  fake_path: null
+  img_size: 299
+  max_samples: 5
+  name: DeepfakeDetection
+  num_workers: 2
+  pin_memory: true
+  real_path: null
+  shuffle: true
+  shuffle_train: true
+  split_seed: 42
+  test_path: null
+  train_path: C:\Users\mingw\Desktop\training\URS-train\train
+  train_split_ratio: 0.8
+  type: class_folders
+  val_path: C:\Users\mingw\Desktop\training\URS-train\validation
+description: Xception model for deepfake detection
+deterministic: false
+device: cpu
+external_trainer:
+  class_name: null
+  enabled: false
+  name: null
+  override_loss: false
+  override_optimizer: false
+  override_saving: false
+  override_scheduler: false
+  parameters: {}
+  script_path: null
+  skip_unified_data_loading: false
+model:
+  adapter: auto
+  adapter_config: {}
+  architecture: null
+  class_name: Xception
+  dropout: 0.1
+  external_adapter: null
+  freeze_backbone: false
+  img_size: 224
+  load_optimizer: false
+  load_scheduler: false
+  model_args:
+    num_classes: 2
+  name: xception_deepfake
+  num_classes: 2
+  path: C:\Users\mingw\Desktop\refactor\xception.py
+  pretrained: false
+  pretrained_weights: null
+  strict_loading: true
+  type: file
+output:
+  experiment_name: xception_deepfake
+  keep_recent_checkpoints: 3
+  output_dir: C:\Users\mingw\Desktop\refactor\train_system\training_output
+  save_best_only: false
+  save_config: true
+  save_last: true
+  save_lightweight: true
+  save_logs: true
+  save_model: true
+  save_optimizer: true
+  save_scheduler: true
+  weight_format: auto
+seed: 42
+tags:
+- xception
+- deepfake-detection
+- binary-classification
+training:
+  accumulation_steps: 1
+  checkpoint_frequency: 5
+  early_stopping_patience: 10
+  efficient_validation: true
+  epochs: 2
+  gradient_clipping: 1.0
+  learning_rate: 0.001
+  log_interval: 10
+  metrics_frequency: 100
+  mixed_precision: false
+  non_blocking_transfer: true
+  optimizer: adam
+  resume_from_checkpoint: null
+  save_frequency: 5
+  scheduler: cosine
+  scheduler_params:
+    T_max: 2
+    eta_min: 1.0e-05
+  tensorboard: true
+  val_frequency: 1
+  wandb: false
+  weight_decay: 0.0001
