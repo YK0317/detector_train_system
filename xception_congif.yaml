@@ -30,6 +30,7 @@ data:
     fake: "fake"                       # Subfolder name for fake images
   
   # Class mapping for binary classification
+  max_samples: 5                       # Use limited samples for testing
   class_mapping:
     real: 0                            # Real images = class 0
     fake: 1                            # Fake images = class 1
@@ -51,7 +52,7 @@ data:
     normalization_std: [0.5, 0.5, 0.5]      # Different from ImageNet!
 
 training:
-  epochs: 50
+  epochs: 2
   learning_rate: 0.001
   optimizer: "adam"
   weight_decay: 0.0001

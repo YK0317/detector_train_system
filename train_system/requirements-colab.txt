@@ -1,0 +1,41 @@
+# Requirements for Google Colab environment
+# Install with: !pip install -r requirements-colab.txt
+
+# Core ML libraries (versions compatible with Colab)
+torch>=1.9.0,<2.5.0
+torchvision>=0.10.0,<0.20.0
+torchaudio>=0.9.0,<2.5.0
+
+# Essential dependencies
+numpy>=1.20.0,<1.27.0
+pandas>=1.3.0,<2.3.0
+Pillow>=8.0.0,<11.0.0
+PyYAML>=5.4.0,<7.0.0
+
+# Visualization and monitoring
+tensorboard>=2.7.0,<3.0.0
+matplotlib>=3.3.0,<4.0.0
+seaborn>=0.11.0,<1.0.0
+
+# Progress bars and utilities
+tqdm>=4.60.0,<5.0.0
+psutil>=5.8.0,<6.0.0
+
+# Optional: Computer vision (avoid opencv conflicts)
+# opencv-python-headless>=4.5.0,<5.0.0  # Commented out to avoid conflicts
+
+# Optional: YOLO support
+# ultralytics>=8.0.0,<9.0.0
+
+# Web interface (optional)
+flask>=2.0.0,<4.0.0
+werkzeug>=1.0.1,<4.0.0
+
+# Development tools (optional)
+jupyter>=1.0.0
+ipywidgets>=7.6.0
+
+# Fix for common Colab issues
+setuptools>=61.0
+wheel>=0.37.0
+packaging>=21.0

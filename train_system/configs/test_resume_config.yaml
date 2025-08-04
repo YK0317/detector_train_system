@@ -1,0 +1,82 @@
+# Test Resume Training Configuration
+# Resume from existing Xception checkpoint
+
+# Model Configuration
+model:
+  name: "xception_deepfake"
+  type: "file"
+  path: "./xception.py"                    # Relative path - will be resolved automatically
+  class_name: "Xception"
+  architecture: null
+  pretrained: false
+  
+  num_classes: 2
+  model_args:
+    num_classes: 2
+
+  adapter: auto                            # Auto-detection instead of null
+
+
+# Data Configuration  
+data:
+  train_path: "C:/Users/mingw/Desktop/training/URS-train/train"
+  val_path: "C:/Users/mingw/Desktop/training/URS-train/validation"
+  img_size: 299
+  batch_size: 4  # Small batch for CPU testing
+  num_workers: 2  # Reduced for Windows compatibility
+  pin_memory: false
+  shuffle_train: true
+  class_mapping:
+    real: 0
+    fake: 1
+  
+  # Data augmentation
+  augmentation:
+    enabled: true
+    horizontal_flip: true
+    rotation: 10
+    normalize: true
+    normalization_mean: [0.485, 0.456, 0.406]
+    normalization_std: [0.229, 0.224, 0.225]
+
+# Training Configuration
+training:
+  epochs: 10
+  learning_rate: 0.001
+  optimizer: "adam"
+  weight_decay: 0.0001
+  scheduler: "cosine"
+  scheduler_params:
+    T_max: 10
+    eta_min: 0.00001
+  
+  # Resume from checkpoint
+  resume_from_checkpoint: "C:/Users/mingw/Desktop/refactor/checkpoint_epoch_5.pth"
+  
+  # Training settings
+  save_frequency: 1
+  log_interval: 10
+  gradient_clipping: 1.0
+
+# Output Configuration
+output:
+  output_dir: "./training_output/test_resume_xception"
+  save_config: true
+  save_best_only: true
+  save_last: true
+  save_optimizer: true
+  save_scheduler: true
+  weight_format: "pth"
+  keep_recent_checkpoints: 3
+
+# Device Configuration
+device: "auto"  # Will auto-detect best available device
+
+# Reproducibility
+seed: 42
+deterministic: true
+
+# Registry (optional)
+registry:
+  auto_scan: true
+  verbose: false

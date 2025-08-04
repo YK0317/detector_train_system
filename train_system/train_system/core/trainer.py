@@ -14,6 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 from pathlib import Path
 import logging
 from datetime import datetime
+from datetime import datetime
 import random
 import numpy as np
 from typing import Dict, Any, Optional, Tuple
@@ -26,6 +27,9 @@ from ..core.wrapper import ModelFactory
 from ..core.dataset import UnifiedDataset
 from ..core.external_trainer import HybridTrainer
 from ..utils.memory import optimize_memory, log_memory_usage, move_data_to_device, setup_cuda_optimizations, MemoryTracker
+from ..utils.device_manager import DeviceManager
+from ..utils.path_resolver import PathResolver
+from ..utils.config_validator import ConfigValidator
 
 
 class UnifiedTrainer:
@@ -41,10 +45,17 @@ class UnifiedTrainer:
         Args:
             config: Complete training configuration
         """
-        self.config = config
-        self.device = self._setup_device()
+        # Setup core components first
         self.logger = self._setup_logging()
-        self.writer = None
+        
+        # Validate and fix configuration
+        self.config = self._validate_config(config)
+        
+        # Setup device after config validation
+        self.device = self._setup_device()
+        
+        # Setup output directory after config is complete
+        self._setup_output_directory()
         
         # Initialize registries for auto-discovery
         self._initialize_registries()
@@ -71,34 +82,115 @@ class UnifiedTrainer:
         self.val_accuracies = []
         self.current_epoch = 0
         
-        # Performance optimizations
+        # Performance optimizations (with safe defaults)
         self.memory_tracker = MemoryTracker()
-        self.metrics_frequency = config.training.metrics_frequency
-        self.non_blocking_transfer = config.training.non_blocking_transfer
-        self.efficient_validation = config.training.efficient_validation
+        self.metrics_frequency = getattr(self.config.training, 'metrics_frequency', 100)
+        self.non_blocking_transfer = getattr(self.config.training, 'non_blocking_transfer', True)
+        self.efficient_validation = getattr(self.config.training, 'efficient_validation', True)
         
         # Setup reproducibility
         self._setup_reproducibility()
         
         # Setup CUDA optimizations
         setup_cuda_optimizations()
+    
+    def _validate_config(self, config: UnifiedTrainingConfig) -> UnifiedTrainingConfig:
+        """
+        Validate and fix configuration using ConfigValidator
         
-        # Create output directory
-        self.output_dir = Path(config.output.output_dir) / config.output.experiment_name
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        Args:
+            config: Original configuration
+            
+        Returns:
+            Validated and fixed configuration
+        """
+        # Convert config to dict for validation
+        if hasattr(config, 'to_dict'):
+            config_dict = config.to_dict()
+        else:
+            # If config doesn't have to_dict, create dict from attributes
+            config_dict = self._config_to_dict(config)
         
-        # Setup tensorboard if enabled
-        if config.training.tensorboard:
-            self.writer = SummaryWriter(log_dir=self.output_dir / 'tensorboard')
+        # Validate and fix
+        validator = ConfigValidator()
+        fixed_config_dict = validator.validate_and_fix(config_dict)
+        
+        # Update original config with fixes while preserving structure
+        self._update_config_from_dict(config, fixed_config_dict)
+        
+        return config
+    
+    def _config_to_dict(self, config) -> dict:
+        """Convert config object to dictionary recursively"""
+        if hasattr(config, '__dict__'):
+            result = {}
+            for key, value in config.__dict__.items():
+                if not key.startswith('_'):
+                    if hasattr(value, '__dict__') and not isinstance(value, (str, int, float, bool, list, dict)):
+                        result[key] = self._config_to_dict(value)
+                    else:
+                        result[key] = value
+            return result
+        else:
+            return config
+    
+    def _update_config_from_dict(self, config, config_dict):
+        """Update config object from dictionary while preserving structure"""
+        for key, value in config_dict.items():
+            if hasattr(config, key):
+                attr = getattr(config, key)
+                if isinstance(value, dict) and hasattr(attr, '__dict__'):
+                    # Recursively update nested objects
+                    self._update_config_from_dict(attr, value)
+                else:
+                    # Update simple attributes
+                    setattr(config, key, value)
+            else:
+                # Add missing attributes
+                if isinstance(value, dict):
+                    # Create a simple namespace object for nested dicts
+                    from types import SimpleNamespace
+                    setattr(config, key, SimpleNamespace(**value))
+                else:
+                    setattr(config, key, value)
+    
+    def _setup_output_directory(self):
+        """Setup output directory after config is validated"""
+        try:
+            if hasattr(self.config, 'output') and hasattr(self.config.output, 'output_dir'):
+                output_dir = self.config.output.output_dir
+                experiment_name = getattr(self.config.output, 'experiment_name', 'experiment')
+                self.output_dir = Path(output_dir) / experiment_name
+            else:
+                # Fallback to default
+                self.output_dir = Path('training_output') / 'experiment'
+            
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Setup tensorboard if enabled
+            if (hasattr(self.config, 'training') and 
+                hasattr(self.config.training, 'tensorboard') and 
+                self.config.training.tensorboard):
+                self.writer = SummaryWriter(log_dir=self.output_dir / 'tensorboard')
+        except Exception as e:
+            self.logger.warning(f"Failed to setup output directory: {e}")
+            self.output_dir = Path('training_output') / 'experiment'
+            self.output_dir.mkdir(parents=True, exist_ok=True)
     
     def _setup_device(self) -> torch.device:
-        """Setup computing device"""
-        if self.config.device == "auto":
-            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        else:
-            device = torch.device(self.config.device)
+        """Setup computing device using intelligent device management"""
+        device = DeviceManager.get_optimal_device(self.config.device)
         
-        logging.info(f"Using device: {device}")
+        # Get detailed device info
+        device_info = DeviceManager.get_device_info(device)
+        self.logger.info(f"Using device: {device}")
+        self.logger.info(f"Device info: {device_info.get('name', 'Unknown')}")
+        
+        # Log memory info for CUDA devices
+        if device.type == 'cuda' and 'memory_total_gb' in device_info:
+            self.logger.info(f"GPU Memory: {device_info['memory_total_gb']:.1f}GB total, "
+                           f"{device_info['memory_allocated_gb']:.1f}GB allocated")
+        
         return device
     
     def _setup_logging(self) -> logging.Logger:
@@ -221,14 +313,15 @@ class UnifiedTrainer:
         if is_best:
             self.best_acc = val_acc
         
-        # Console output
+        # Console output - epoch is 0-based from loop, display as 1-based
+        epoch_display = epoch + 1
         status = "NEW BEST" if is_best else "        "
-        print(f"Epoch {epoch+1:3d} | Train: {train_loss:.4f} ({train_acc:5.1f}%) | "
+        print(f"Epoch {epoch_display:3d} | Train: {train_loss:.4f} ({train_acc:5.1f}%) | "
               f"Val: {val_loss:.4f} ({val_acc:5.1f}%) | {status}")
         
         # File output
         timestamp = datetime.now().strftime("%H:%M:%S")
-        self.log_file.write(f"{timestamp} | Epoch {epoch+1:3d} | "
+        self.log_file.write(f"{timestamp} | Epoch {epoch_display:3d} | "
                            f"Train: {train_loss:.4f}/{train_acc:.2f}% | "
                            f"Val: {val_loss:.4f}/{val_acc:.2f}% | "
                            f"Best: {self.best_acc:.2f}%\n")
@@ -265,6 +358,11 @@ class UnifiedTrainer:
         elif model_config.type == "timm":
             self._load_timm_model(model_config)
         elif model_config.type == "file":
+            self._load_file_model(model_config)
+        elif model_config.type == "custom":
+            # Custom model loading logic
+            if not model_config.path:
+                raise ValueError("Custom model type requires a valid path")
             self._load_file_model(model_config)
         else:
             raise ValueError(f"Unsupported model type: {model_config.type}")
@@ -959,6 +1057,122 @@ class UnifiedTrainer:
         except Exception as e:
             self.logger.warning(f"⚠️  Failed to cleanup old checkpoints: {e}")
     
+    def _resume_from_checkpoint(self, checkpoint_path: Path) -> int:
+        """Resume training from a checkpoint file"""
+        try:
+            self.logger.info(f"📂 Loading checkpoint from: {checkpoint_path}")
+            
+            # Load checkpoint
+            checkpoint = torch.load(checkpoint_path, map_location=self.device)
+            
+            # Load model state
+            if 'model_state_dict' in checkpoint:
+                self.wrapper.load_state_dict(checkpoint['model_state_dict'])
+                self.logger.info("✅ Model state loaded successfully")
+            else:
+                self.logger.warning("⚠️  No model state found in checkpoint")
+            
+            # Load optimizer state
+            if 'optimizer_state_dict' in checkpoint and self.optimizer:
+                self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                self.logger.info("✅ Optimizer state loaded successfully")
+            
+            # Load scheduler state
+            if 'scheduler_state_dict' in checkpoint and self.scheduler:
+                self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+                self.logger.info("✅ Scheduler state loaded successfully")
+            
+            # Load best validation accuracy
+            if 'best_val_acc' in checkpoint:
+                self.best_val_acc = checkpoint['best_val_acc']
+                self.logger.info(f"✅ Best validation accuracy: {self.best_val_acc:.4f}")
+            
+            # Load training history
+            if 'train_losses' in checkpoint:
+                self.train_losses = checkpoint['train_losses']
+            if 'val_accuracies' in checkpoint:
+                self.val_accuracies = checkpoint['val_accuracies']
+            
+            # Get starting epoch
+            start_epoch = checkpoint.get('epoch', 0) + 1  # Resume from next epoch
+            self.logger.info(f"✅ Resuming training from epoch {start_epoch}")
+            
+            return start_epoch
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to load checkpoint: {e}")
+            self.logger.warning("🔄 Starting training from scratch")
+            return 0
+    
+    def _find_latest_checkpoint(self) -> Optional[Path]:
+        """Find the latest checkpoint file"""
+        checkpoint_patterns = [
+            "last_checkpoint.*",
+            "checkpoint_epoch_*.*", 
+            "best_checkpoint.*"
+        ]
+        
+        latest_file = None
+        latest_time = 0
+        
+        for pattern in checkpoint_patterns:
+            for checkpoint_file in self.output_dir.glob(pattern):
+                if checkpoint_file.stat().st_mtime > latest_time:
+                    latest_time = checkpoint_file.stat().st_mtime
+                    latest_file = checkpoint_file
+        
+        return latest_file
+    
+    def _load_checkpoint_and_resume(self, checkpoint_path: Path) -> int:
+        """Load checkpoint and return start epoch"""
+        try:
+            self.logger.info(f"📂 Loading checkpoint from: {checkpoint_path}")
+            
+            # Load checkpoint
+            checkpoint = torch.load(checkpoint_path, map_location=self.device)
+            
+            # Load model state
+            if 'model_state_dict' in checkpoint:
+                self.wrapper.load_state_dict(checkpoint['model_state_dict'])
+                self.logger.info("✅ Model state loaded successfully")
+            
+            # Load optimizer state (after optimizer is created)
+            if 'optimizer_state_dict' in checkpoint and self.optimizer:
+                self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                self.logger.info("✅ Optimizer state loaded successfully")
+            
+            # Load scheduler state (after scheduler is created)
+            if 'scheduler_state_dict' in checkpoint and self.scheduler:
+                self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+                self.logger.info("✅ Scheduler state loaded successfully")
+            
+            # Load best validation accuracy
+            if 'best_val_acc' in checkpoint:
+                self.best_val_acc = checkpoint['best_val_acc']
+                self.logger.info(f"✅ Best validation accuracy: {self.best_val_acc:.4f}")
+            
+            # Load training history
+            if 'train_losses' in checkpoint:
+                self.train_losses = checkpoint['train_losses']
+            if 'val_accuracies' in checkpoint:
+                self.val_accuracies = checkpoint['val_accuracies']
+            
+            # CORRECTED: Get starting epoch
+            # Checkpoint stores the completed epoch (1-based)
+            # We need to return the next epoch to train (0-based for the loop)
+            completed_epoch = checkpoint.get('epoch', 0)  # This is 1-based (human readable)
+            start_epoch = completed_epoch  # Use completed epoch as 0-based loop index
+            
+            self.logger.info(f"✅ Checkpoint was saved after completing epoch {completed_epoch}")
+            self.logger.info(f"✅ Resuming training from epoch {start_epoch + 1} (will be displayed as epoch {start_epoch + 1})")
+            
+            return start_epoch
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to load checkpoint: {e}")
+            self.logger.warning("🔄 Starting training from scratch")
+            return 0
+    
     def train(self):
         """Main training loop - handles both built-in and external trainers"""
         
@@ -993,6 +1207,28 @@ class UnifiedTrainer:
         self.load_model()
         self.load_data()
         self.setup_optimizer()
+        
+        # Check for resume from checkpoint
+        start_epoch = 0
+        if hasattr(self.config.training, 'resume_from_checkpoint') and self.config.training.resume_from_checkpoint:
+            resume_config = self.config.training.resume_from_checkpoint
+            
+            if resume_config is True:
+                # Auto-find latest checkpoint
+                checkpoint_path = self._find_latest_checkpoint()
+                if checkpoint_path:
+                    start_epoch = self._load_checkpoint_and_resume(checkpoint_path)
+                else:
+                    self.logger.warning("🔍 No checkpoint found for auto-resume, starting from scratch")
+            elif isinstance(resume_config, str):
+                # Use specified checkpoint path
+                checkpoint_path = Path(resume_config)
+                if checkpoint_path.exists():
+                    start_epoch = self._load_checkpoint_and_resume(checkpoint_path)
+                else:
+                    self.logger.error(f"❌ Specified checkpoint not found: {checkpoint_path}")
+                    self.logger.warning("🔄 Starting training from scratch")
+        
         self.setup_clean_logging()
         
         # Save configuration
@@ -1006,7 +1242,7 @@ class UnifiedTrainer:
         epochs = self.config.training.epochs
         
         try:
-            for epoch in range(epochs):
+            for epoch in range(start_epoch, epochs):
                 self.current_epoch = epoch
                 
                 # Training phase with progress bar
@@ -1031,7 +1267,8 @@ class UnifiedTrainer:
                 if val_acc > self.best_val_acc:
                     self.best_val_acc = val_acc
                 
-                # Save checkpoint
+                # Save checkpoint with correct epoch numbering
+                # epoch is 0-based in loop, save as epoch + 1 (completed epoch, 1-based)
                 if epoch % self.config.training.save_frequency == 0 or val_acc > self.best_val_acc:
                     self.save_checkpoint(epoch + 1, val_acc > self.best_val_acc)
                 
@@ -1071,13 +1308,15 @@ class UnifiedTrainer:
     
     def _train_epoch_with_progress(self, epoch):
         """Training epoch with progress bar"""
-        self.model.train()
+        self.wrapper.train()
         total_loss = 0.0
         correct = 0
         total = 0
         
         # Progress bar for training
-        desc = f"Epoch {epoch+1:2d} Train"
+        # epoch is 0-based from the loop, but we display 1-based for humans
+        epoch_display = epoch + 1
+        desc = f"Epoch {epoch_display:2d} Train"
         pbar = tqdm(self.train_loader, desc=desc, leave=False,
                     bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] {postfix}')
         
@@ -1085,7 +1324,7 @@ class UnifiedTrainer:
             data, target = data.to(self.device), target.to(self.device)
             
             self.optimizer.zero_grad()
-            output = self.model(data)
+            output = self.wrapper(data)
             loss = self.criterion(output, target)
             loss.backward()
             self.optimizer.step()
@@ -1110,13 +1349,15 @@ class UnifiedTrainer:
 
     def _validate_epoch_with_progress(self, epoch):
         """Validation epoch with progress bar"""
-        self.model.eval()
+        self.wrapper.eval()
         total_loss = 0.0
         correct = 0
         total = 0
         
         # Progress bar for validation
-        desc = f"Epoch {epoch+1:2d} Val  "
+        # epoch is 0-based from the loop, but we display 1-based for humans
+        epoch_display = epoch + 1
+        desc = f"Epoch {epoch_display:2d} Val  "
         pbar = tqdm(self.val_loader, desc=desc, leave=False,
                     bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] {postfix}')
         
@@ -1124,7 +1365,7 @@ class UnifiedTrainer:
             for data, target in pbar:
                 data, target = data.to(self.device), target.to(self.device)
                 
-                output = self.model(data)
+                output = self.wrapper(data)
                 loss = self.criterion(output, target)
                 
                 # Statistics

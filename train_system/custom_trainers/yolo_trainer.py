@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 """
 YOLO External Trainer using YOLO's built-in train function
@@ -14,12 +15,53 @@ import os
 import tempfile
 import yaml
 
-try:
-    from ultralytics import YOLO
-    YOLO_AVAILABLE = True
-except ImportError:
-    YOLO_AVAILABLE = False
-    print("⚠️  Warning: ultralytics not available. Install with: pip install ultralytics")
+# Robust YOLO import with fallback
+YOLO_AVAILABLE = False
+YOLO = None
+
+def import_yolo_safely():
+    """Safely import YOLO with error handling"""
+    global YOLO_AVAILABLE, YOLO
+    
+    if YOLO_AVAILABLE and YOLO is not None:
+        return True
+    
+    try:
+        # Try to disable OpenCV G-API to avoid typing issues
+        os.environ['OPENCV_DNN_BACKEND_INFERENCE_ENGINE_NN_BUILDER_2019'] = '0'
+        os.environ['OPENCV_DNN_BACKEND_INFERENCE_ENGINE_NGRAPH'] = '0'
+        
+        # Import ultralytics
+        from ultralytics import YOLO as _YOLO
+        YOLO = _YOLO
+        YOLO_AVAILABLE = True
+        print("✅ YOLO imported successfully")
+        return True
+        
+    except Exception as e:
+        print(f"❌ YOLO import failed: {e}")
+        print("🔧 Trying fallback import...")
+        
+        try:
+            # Try alternative import approach
+            import sys
+            if 'cv2' in sys.modules:
+                del sys.modules['cv2']
+            
+            # Disable problematic cv2 features
+            os.environ['OPENCV_DNN_BACKEND_DEFAULT'] = '0'
+            
+            from ultralytics import YOLO as _YOLO
+            YOLO = _YOLO
+            YOLO_AVAILABLE = True
+            print("✅ YOLO imported with fallback method")
+            return True
+            
+        except Exception as e2:
+            print(f"❌ Fallback import also failed: {e2}")
+            print("💡 Suggestion: Try 'pip install opencv-python==4.8.1.78 ultralytics==8.0.196'")
+            YOLO_AVAILABLE = False
+            return False
 
 
 class YOLOBuiltinTrainer:
@@ -29,15 +71,30 @@ class YOLOBuiltinTrainer:
     """
     
     def __init__(self, config, model, train_loader, val_loader, device, output_dir):
-        if not YOLO_AVAILABLE:
-            raise ImportError("ultralytics package is required for YOLOBuiltinTrainer")
+        # Try to import YOLO when actually needed
+        if not import_yolo_safely():
+            raise ImportError(
+                "❌ YOLO import failed. This is likely due to OpenCV compatibility issues.\n"
+                "🔧 Try these solutions:\n"
+                "   1. pip uninstall opencv-python opencv-python-headless -y\n"
+                "   2. pip install opencv-python==4.8.1.78\n"
+                "   3. pip install ultralytics==8.0.196\n"
+                "   4. Or use conda: conda install opencv=4.8.1 ultralytics=8.0.196"
+            )
         
         self.config = config
-        self.original_model = model
-        self.train_loader = train_loader
-        self.val_loader = val_loader
+        self.original_model = model  # This might be a train_system model for dry-run
         self.device = device
         self.output_dir = Path(output_dir)
+        
+        # For YOLO trainers that skip unified data loading, we need to create minimal data loaders
+        # for compatibility with dry-run and external trainer interface
+        if train_loader is None or val_loader is None:
+            print("   🔧 Creating minimal data loaders for YOLO trainer compatibility...")
+            self.train_loader, self.val_loader = self._create_minimal_data_loaders()
+        else:
+            self.train_loader = train_loader
+            self.val_loader = val_loader
         
         # Setup logging
         self.logger = logging.getLogger(__name__)
@@ -49,7 +106,7 @@ class YOLOBuiltinTrainer:
         else:
             self.params = {}
         
-        # Create YOLO model instance
+        # Create YOLO model instance (now that we know import works)
         self._setup_yolo_model()
         
         # Training state for compatibility
@@ -63,26 +120,124 @@ class YOLOBuiltinTrainer:
         print(f"   Device: {device}")
         print(f"   Output: {output_dir}")
         print(f"   Parameters: {self.params}")
+        
+        # If this is a dry-run with train_system model, we'll note it
+        if self.original_model is not None:
+            print(f"   🧪 Dry-run mode: Received train_system model {type(self.original_model).__name__}")
+            print(f"   🔄 Will use YOLO model for actual training")
+    
+    def _create_minimal_data_loaders(self):
+        """Create minimal data loaders for dry-run compatibility"""
+        try:
+            import torch
+            from torch.utils.data import DataLoader, Dataset
+            from PIL import Image
+            import os
+            from pathlib import Path
+            
+            class MinimalDataset(Dataset):
+                def __init__(self, data_path, max_samples=5):
+                    self.data_path = Path(data_path)
+                    self.samples = []
+                    self.max_samples = max_samples
+                    
+                    # Look for class folders (real/fake structure)
+                    train_path = self.data_path / "train" if (self.data_path / "train").exists() else self.data_path
+                    
+                    class_dirs = [d for d in train_path.iterdir() if d.is_dir()]
+                    
+                    sample_count = 0
+                    for class_idx, class_dir in enumerate(class_dirs):
+                        if sample_count >= self.max_samples:
+                            break
+                            
+                        for img_file in class_dir.glob("*"):
+                            if img_file.suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp']:
+                                self.samples.append((str(img_file), class_idx))
+                                sample_count += 1
+                                if sample_count >= self.max_samples:
+                                    break
+                
+                def __len__(self):
+                    return len(self.samples)
+                
+                def __getitem__(self, idx):
+                    img_path, label = self.samples[idx]
+                    # Create dummy tensor data for dry-run
+                    dummy_img = torch.randn(3, 224, 224)  # RGB image
+                    return dummy_img, torch.tensor(label, dtype=torch.long)
+            
+            # Get data path from config
+            data_config = self.config.data
+            train_path = getattr(data_config, 'train_path', '')
+            
+            if train_path and os.path.exists(train_path):
+                train_dataset = MinimalDataset(train_path, max_samples=5)
+                val_dataset = MinimalDataset(train_path, max_samples=2)  # Smaller for validation
+                
+                train_loader = DataLoader(train_dataset, batch_size=2, shuffle=False)
+                val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
+                
+                print(f"      Created minimal data loaders: {len(train_dataset)} train, {len(val_dataset)} val samples")
+                return train_loader, val_loader
+            else:
+                # Create completely dummy data loaders
+                print(f"      Creating dummy data loaders for dry-run")
+                
+                class DummyDataset(Dataset):
+                    def __init__(self, size=5):
+                        self.size = size
+                    
+                    def __len__(self):
+                        return self.size
+                    
+                    def __getitem__(self, idx):
+                        return torch.randn(3, 224, 224), torch.tensor(idx % 2, dtype=torch.long)
+                
+                train_dataset = DummyDataset(5)
+                val_dataset = DummyDataset(2)
+                
+                train_loader = DataLoader(train_dataset, batch_size=2, shuffle=False)
+                val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
+                
+                return train_loader, val_loader
+                
+        except Exception as e:
+            print(f"      ⚠️  Failed to create minimal data loaders: {e}")
+            # Return None if we can't create loaders
+            return None, None
     
     def _setup_yolo_model(self):
         """Setup YOLO model for training"""
+        global YOLO
+        
         # Get model architecture from config
         model_config = self.config.model
         
-        if hasattr(model_config, 'path') and model_config.path:
-            # Use custom model or pre-trained weights
-            model_path = model_config.path
-            if os.path.exists(model_path):
-                print(f"   Loading YOLO model from: {model_path}")
-                self.yolo_model = YOLO(model_path)
+        try:
+            if hasattr(model_config, 'path') and model_config.path:
+                # Use custom model or pre-trained weights
+                model_path = model_config.path
+                if os.path.exists(model_path):
+                    print(f"   Loading YOLO model from: {model_path}")
+                    self.yolo_model = YOLO(model_path)
+                else:
+                    # Use default YOLO model for classification
+                    print("   Using default YOLO classification model")
+                    self.yolo_model = YOLO('yolov8n-cls.pt')
             else:
-                # Use default YOLO model for classification
+                # Use default YOLO model
                 print("   Using default YOLO classification model")
                 self.yolo_model = YOLO('yolov8n-cls.pt')
-        else:
-            # Use default YOLO model
-            print("   Using default YOLO classification model")
-            self.yolo_model = YOLO('yolov8n-cls.pt')
+        except Exception as e:
+            print(f"❌ YOLO model setup failed: {e}")
+            print("🔧 Trying alternative model...")
+            try:
+                # Try with a smaller model that might work better
+                self.yolo_model = YOLO('yolov8n.pt')  # Detection model as fallback
+                print("   ✅ Using YOLO detection model as fallback")
+            except Exception as e2:
+                raise RuntimeError(f"Failed to setup any YOLO model: {e2}")
         
         # If we have a trained model, load its weights
         if self.original_model is not None:

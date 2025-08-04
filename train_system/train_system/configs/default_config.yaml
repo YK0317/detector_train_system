@@ -1,0 +1,48 @@
+# Default configuration for train-system
+# This is a minimal default configuration file
+
+# ============================================================================
+# MODEL CONFIGURATION
+# ============================================================================
+model:
+  name: "default_model"
+  type: "torchvision"
+  path: null
+  class_name: "ResNet"
+  architecture: "resnet18"
+  pretrained: true
+  num_classes: 2
+
+# ============================================================================
+# DATA CONFIGURATION
+# ============================================================================
+data:
+  name: "default_dataset"
+  type: "folder"
+  train_path: "data/train"
+  val_path: "data/val"
+  img_size: 224
+  batch_size: 32
+  num_workers: 4
+
+# ============================================================================
+# TRAINING CONFIGURATION
+# ============================================================================
+training:
+  epochs: 10
+  learning_rate: 0.001
+  optimizer: "adam"
+  scheduler: "cosine"
+
+# ============================================================================
+# OUTPUT CONFIGURATION
+# ============================================================================
+output:
+  output_dir: "training_output"
+  experiment_name: "default_experiment"
+
+# ============================================================================
+# SYSTEM SETTINGS
+# ============================================================================
+device: "auto"
+seed: 42

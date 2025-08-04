@@ -7,6 +7,7 @@ setup.py
 custom_adapters/capsule_forensics_adapter.py
 custom_trainers/__init__.py
 custom_trainers/capsule_forensics_trainer.py
+custom_trainers/test_trainer.py
 custom_trainers/yolo_trainer.py
 docs/CONFIGURATION_GUIDE.md
 docs/WEIGHT_FORMATS.md
@@ -40,5 +41,8 @@ train_system/registry/adapter_registry.py
 train_system/registry/discovery.py
 train_system/registry/trainer_registry.py
 train_system/utils/__init__.py
+train_system/utils/config_validator.py
+train_system/utils/device_manager.py
 train_system/utils/memory.py
+train_system/utils/path_resolver.py
 train_system/utils/weights.py

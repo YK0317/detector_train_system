@@ -10,7 +10,6 @@ recursive-include docs *.md *.rst *.txt
 include requirements.txt
 include requirements-dev.txt
 recursive-include train_system/configs *.yaml *.yml *.json
-recursive-include train_system/config/templates *.yaml *.yml *.json
 
 # Example files
 recursive-include examples *.py *.yaml *.yml *.json *.md
@@ -31,6 +30,27 @@ global-exclude .DS_Store
 global-exclude *.so
 global-exclude *.dll
 global-exclude *.dylib
+
+# Exclude build artifacts
+global-exclude build/*
+global-exclude dist/*
+global-exclude *.egg-info/*
+global-exclude *.egg-info
+global-exclude .eggs/*
+global-exclude .eggs
+
+# Exclude temporary and cache files
+global-exclude *.tmp
+global-exclude *.temp
+global-exclude .coverage
+global-exclude htmlcov/*
+
+# Exclude IDE and editor files
+global-exclude .vscode/*
+global-exclude .idea/*
+global-exclude *.swp
+global-exclude *.swo
+global-exclude *~
 
 # Exclude development files
 exclude .gitignore
