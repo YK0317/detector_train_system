@@ -1,7 +1,0 @@
-build
-configs
-custom_adapters
-custom_trainers
-docs
-train_system
-training_output
