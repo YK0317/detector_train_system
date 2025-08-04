@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Setup script for Train System
+Enhanced setup script for Train System with Universal Installer Integration
 
 A comprehensive training system that can train any model with any dataset
 using configuration files and providing API access.
@@ -9,6 +9,55 @@ using configuration files and providing API access.
 from setuptools import setup, find_packages
 from pathlib import Path
 import sys
+import os
+
+def use_universal_installer():
+    """Attempt to use universal installer for optimal setup"""
+    try:
+        # Check if universal installer is available
+        installer_path = Path(__file__).parent / "install_universal.py"
+        if not installer_path.exists():
+            return False
+        
+        # Import and run universal installer
+        sys.path.insert(0, str(Path(__file__).parent))
+        from install_universal import UniversalInstaller
+        
+        print("Train-System Enhanced Setup")
+        print("Using universal installer for optimal environment detection...")
+        print("=" * 60)
+        
+        installer = UniversalInstaller(verbose=True)
+        success = installer.install()
+        
+        if success:
+            print("\nEnhanced setup completed successfully!")
+            return True
+        else:
+            print("\nUniversal installer had issues, falling back to standard setup...")
+            return False
+            
+    except Exception as e:
+        print(f"Universal installer failed ({e}), using standard setup...")
+        return False
+
+def check_direct_execution():
+    """Check if setup.py is being executed directly vs pip install"""
+    # If called directly (python setup.py), try universal installer first
+    if __name__ == "__main__" and len(sys.argv) > 1:
+        if sys.argv[1] not in ['install', 'develop', 'egg_info', 'build', 'bdist_wheel']:
+            # Direct execution for custom commands, try universal installer
+            if 'install_enhanced' in sys.argv or 'install' in sys.argv:
+                if use_universal_installer():
+                    sys.exit(0)
+    
+    return False
+
+# Try universal installer for direct execution
+if __name__ == "__main__" and '--use-universal' in sys.argv:
+    sys.argv.remove('--use-universal')
+    if use_universal_installer():
+        sys.exit(0)
 
 # Read the README file for long description
 this_directory = Path(__file__).parent

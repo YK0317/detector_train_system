@@ -1,0 +1,9 @@
+batch_size: 64
+data_dir: ./data
+environment: local
+gpu_available: false
+gpu_count: 0
+num_workers: 4
+output_dir: ./outputs
+persistent_workers: true
+pin_memory: true
