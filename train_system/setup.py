@@ -11,6 +11,7 @@ from pathlib import Path
 import sys
 import os
 
+
 def use_universal_installer():
     """Attempt to use universal installer for optimal setup"""
     try:
@@ -18,61 +19,75 @@ def use_universal_installer():
         installer_path = Path(__file__).parent / "install_universal.py"
         if not installer_path.exists():
             return False
-        
+
         # Import and run universal installer
         sys.path.insert(0, str(Path(__file__).parent))
         from install_universal import UniversalInstaller
-        
+
         print("Train-System Enhanced Setup")
         print("Using universal installer for optimal environment detection...")
         print("=" * 60)
-        
+
         installer = UniversalInstaller(verbose=True)
         success = installer.install()
-        
+
         if success:
             print("\nEnhanced setup completed successfully!")
             return True
         else:
             print("\nUniversal installer had issues, falling back to standard setup...")
             return False
-            
+
     except Exception as e:
         print(f"Universal installer failed ({e}), using standard setup...")
         return False
+
 
 def check_direct_execution():
     """Check if setup.py is being executed directly vs pip install"""
     # If called directly (python setup.py), try universal installer first
     if __name__ == "__main__" and len(sys.argv) > 1:
-        if sys.argv[1] not in ['install', 'develop', 'egg_info', 'build', 'bdist_wheel']:
+        if sys.argv[1] not in [
+            "install",
+            "develop",
+            "egg_info",
+            "build",
+            "bdist_wheel",
+        ]:
             # Direct execution for custom commands, try universal installer
-            if 'install_enhanced' in sys.argv or 'install' in sys.argv:
+            if "install_enhanced" in sys.argv or "install" in sys.argv:
                 if use_universal_installer():
                     sys.exit(0)
-    
+
     return False
 
+
 # Try universal installer for direct execution
-if __name__ == "__main__" and '--use-universal' in sys.argv:
-    sys.argv.remove('--use-universal')
+if __name__ == "__main__" and "--use-universal" in sys.argv:
+    sys.argv.remove("--use-universal")
     if use_universal_installer():
         sys.exit(0)
 
 # Read the README file for long description
 this_directory = Path(__file__).parent
-long_description = (this_directory / "README.md").read_text(encoding='utf-8') if (this_directory / "README.md").exists() else ""
+long_description = (
+    (this_directory / "README.md").read_text(encoding="utf-8")
+    if (this_directory / "README.md").exists()
+    else ""
+)
 
 # Read requirements from requirements.txt
 requirements = []
 if (this_directory / "requirements.txt").exists():
-    with open(this_directory / "requirements.txt", encoding='utf-8') as f:
-        requirements = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+    with open(this_directory / "requirements.txt", encoding="utf-8") as f:
+        requirements = [
+            line.strip() for line in f if line.strip() and not line.startswith("#")
+        ]
 
 # Core dependencies that are always required
 core_requirements = [
     "torch>=1.9.0",
-    "torchvision>=0.10.0", 
+    "torchvision>=0.10.0",
     "Pillow>=8.0.0",
     "PyYAML>=5.4.0",
     "tensorboard>=2.7.0",
@@ -126,7 +141,7 @@ install_requires = requirements if requirements else core_requirements
 setup(
     name="train-system",
     version="2.0.0",
-    author="Train System Team", 
+    author="Train System Team",
     author_email="contact@train-system.ai",
     description="A comprehensive, unified training system for PyTorch models",
     long_description=long_description,
@@ -148,7 +163,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10", 
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -162,10 +177,13 @@ setup(
     extras_require={
         "web": web_requirements,
         "dev": dev_requirements,
-        "docs": docs_requirements, 
+        "docs": docs_requirements,
         "optional": optional_requirements,
         "all": web_requirements + optional_requirements,
-        "complete": web_requirements + dev_requirements + docs_requirements + optional_requirements,
+        "complete": web_requirements
+        + dev_requirements
+        + docs_requirements
+        + optional_requirements,
     },
     entry_points={
         "console_scripts": [
@@ -183,7 +201,7 @@ setup(
     package_data={
         "train_system": [
             "config/templates/*.yaml",
-            "config/templates/*.json", 
+            "config/templates/*.json",
             "configs/*.yaml",
             "configs/*.json",
             "examples/*.py",
@@ -191,10 +209,17 @@ setup(
             "docs/*.md",
         ],
     },
-    data_files=[
-        ("share/train_system/configs", ["train_system/configs/default_config.yaml"]),
-        ("share/train_system/examples", ["examples/basic_example.py"]),
-    ] if Path("examples/basic_example.py").exists() else [],
+    data_files=(
+        [
+            (
+                "share/train_system/configs",
+                ["train_system/configs/default_config.yaml"],
+            ),
+            ("share/train_system/examples", ["examples/basic_example.py"]),
+        ]
+        if Path("examples/basic_example.py").exists()
+        else []
+    ),
     zip_safe=False,
     platforms=["any"],
     test_suite="tests",

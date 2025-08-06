@@ -20,12 +20,14 @@ from pathlib import Path
 # Add train_system to path
 sys.path.insert(0, str(Path(__file__).parent))
 
+
 def load_test_module(test_file_path):
     """Dynamically load a test module"""
     spec = importlib.util.spec_from_file_location("test_module", test_file_path)
     test_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(test_module)
     return test_module
+
 
 def run_basic_tests():
     """Run basic tests from test_basic.py"""
@@ -43,6 +45,7 @@ def run_basic_tests():
         print(f"❌ Basic tests failed: {e}")
         return False
 
+
 def run_comprehensive_tests():
     """Run comprehensive tests from test_comprehensive.py"""
     print("🔄 Running Comprehensive Tests...")
@@ -59,45 +62,55 @@ def run_comprehensive_tests():
         print(f"❌ Comprehensive tests failed: {e}")
         return False
 
+
 def check_installation():
     """Check if train_system is properly installed"""
     print("🔍 Checking Train System Installation...")
     try:
         import train_system
-        print(f"✅ Train System version: {getattr(train_system, '__version__', 'unknown')}")
-        
+
+        print(
+            f"✅ Train System version: {getattr(train_system, '__version__', 'unknown')}"
+        )
+
         # Test basic imports
         from train_system import UnifiedTrainingWrapper, ModelFactory
         from train_system.config import UnifiedTrainingConfig
+
         print("✅ Core imports successful")
         return True
-        
+
     except ImportError as e:
         print(f"❌ Installation check failed: {e}")
         return False
 
+
 def main():
     parser = argparse.ArgumentParser(description="Train System Test Runner")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
-    parser.add_argument("--quick", "-q", action="store_true", help="Run only basic tests")
-    parser.add_argument("--install-check", "-i", action="store_true", help="Only check installation")
-    
+    parser.add_argument(
+        "--quick", "-q", action="store_true", help="Run only basic tests"
+    )
+    parser.add_argument(
+        "--install-check", "-i", action="store_true", help="Only check installation"
+    )
+
     args = parser.parse_args()
-    
+
     print("🚀 Train System Test Runner")
     print("=" * 50)
-    
+
     # Check installation first
     if not check_installation():
         print("\n❌ Installation check failed. Please install train_system properly.")
         return 1
-    
+
     if args.install_check:
         print("\n✅ Installation check passed.")
         return 0
-    
+
     success = True
-    
+
     if args.quick:
         # Run only basic tests
         success = run_basic_tests()
@@ -105,12 +118,12 @@ def main():
         # Run comprehensive tests, fallback to basic if failed
         print("\n" + "=" * 50)
         success = run_comprehensive_tests()
-        
+
         if not success:
             print("\n⚠️ Comprehensive tests failed, falling back to basic tests...")
             print("=" * 50)
             success = run_basic_tests()
-    
+
     print("\n" + "=" * 50)
     if success:
         print("🎉 All tests completed successfully!")
@@ -118,6 +131,7 @@ def main():
     else:
         print("❌ Some tests failed. Check the output above for details.")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

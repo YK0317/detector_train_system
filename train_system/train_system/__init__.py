@@ -22,13 +22,13 @@ Main Components:
 Example Usage:
     >>> from train_system import UnifiedTrainingWrapper, ModelFactory
     >>> from train_system.adapters import AutoAdapter
-    >>> 
+    >>>
     >>> # Create wrapped model
     >>> wrapper = ModelFactory.create_wrapped_model('resnet18')
-    >>> 
+    >>>
     >>> # Or wrap manually
     >>> wrapper = UnifiedTrainingWrapper(your_model, AutoAdapter())
-    >>> 
+    >>>
     >>> # Train normally
     >>> optimizer = torch.optim.Adam(wrapper.parameters())
     >>> for images, labels in dataloader:
@@ -47,7 +47,7 @@ try:
     from .core.wrapper import UnifiedTrainingWrapper, ModelFactory
     from .core.trainer import UnifiedTrainer
     from .core.dataset import UnifiedDataset
-    
+
     # Adapter imports
     from .adapters import (
         ModelAdapter,
@@ -57,9 +57,9 @@ try:
         CapsuleNetworkAdapter,
         CustomFunctionAdapter,
         AutoAdapter,
-        get_adapter_for_model
+        get_adapter_for_model,
     )
-    
+
     # Configuration imports
     from .config import (
         ConfigValidator,
@@ -68,12 +68,12 @@ try:
         UnifiedTrainingConfig,
         ModelConfig,
         DataConfig,
-        TrainingConfig
+        TrainingConfig,
     )
-    
+
     # API imports
     from .api.server import TrainingAPI
-    
+
     # Registry imports
     from .registry import (
         AdapterRegistry,
@@ -83,46 +83,43 @@ try:
         scan_additional_paths,
         get_component_by_name,
         register_component,
-        is_component_available
+        is_component_available,
     )
-    
+
 except ImportError as e:
     # Graceful handling of import errors during development
     import warnings
+
     warnings.warn(f"Some train_system components could not be imported: {e}")
 
 __all__ = [
     # Core classes
     "UnifiedTrainingWrapper",
-    "ModelFactory", 
+    "ModelFactory",
     "UnifiedTrainer",
     "UnifiedDataset",
-    
     # Adapters
     "ModelAdapter",
     "StandardAdapter",
-    "LogitsAndFeaturesAdapter", 
+    "LogitsAndFeaturesAdapter",
     "DictOutputAdapter",
     "CapsuleNetworkAdapter",
     "CustomFunctionAdapter",
     "AutoAdapter",
     "get_adapter_for_model",
-    
     # Configuration
     "ConfigValidator",
     "ValidationResult",
     "ConfigTemplateManager",
     "UnifiedTrainingConfig",
     "ModelConfig",
-    "DataConfig", 
+    "DataConfig",
     "TrainingConfig",
-    
     # API
     "TrainingAPI",
-    
     # Registry
     "AdapterRegistry",
-    "TrainerRegistry", 
+    "TrainerRegistry",
     "initialize_registries",
     "list_available_components",
     "scan_additional_paths",

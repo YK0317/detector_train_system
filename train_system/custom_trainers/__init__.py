@@ -7,4 +7,4 @@ via the external trainer system.
 
 from .yolo_trainer import YOLOBuiltinTrainer, CustomYOLOTrainer
 
-__all__ = ['YOLOBuiltinTrainer', 'CustomYOLOTrainer']
+__all__ = ["YOLOBuiltinTrainer", "CustomYOLOTrainer"]
