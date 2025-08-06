@@ -8,7 +8,7 @@ model:
   # Basic model information
   name: "ucf_deepfake_detector"
   type: "file"                         # Load from file since we have the UCF implementation
-  path: "models/ucf_standalone.py"     # Path to UCF model implementation
+  path: "/content/drive/MyDrive/trained/ucf_standalone.py"     # Path to UCF model implementation
   class_name: "UCFStandalone"          # Class name in the file
   architecture: "ucf"                  # Custom architecture
   pretrained: false                    # Train from scratch or load checkpoint
@@ -49,9 +49,8 @@ data:
   # Basic dataset information
   name: "UCF_Dataset"
   type: "class_folders"                # Expect real/fake folder structure
-  train_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\train"
-  val_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\validation"
-  # test_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\test"
+  train_path: "/content/drive/MyDrive/train"
+  val_path: "/content/drive/MyDrive/validation"
   
   # Class folder configuration
   class_folders:
@@ -62,8 +61,8 @@ data:
   
   # Data processing settings
   img_size: 256                        # UCF expects 256x256 images
-  batch_size: 8                        # Reasonable batch size for UCF
-  num_workers: 4                       # Data loading workers
+  batch_size: 32                        # Reasonable batch size for UCF
+  num_workers: 32                       # Data loading workers
   pin_memory: true                     # Faster GPU transfer
   shuffle_train: true                  # Shuffle training data
   
@@ -107,7 +106,7 @@ data:
 # ============================================================================
 training:
   # Basic training parameters
-  epochs: 50                          # Number of training epochs
+  epochs: 25                          # Number of training epochs
   learning_rate: 0.001                # Initial learning rate
   weight_decay: 0.0001                # L2 regularization
   optimizer: "adam"                   # Adam optimizer
@@ -144,27 +143,19 @@ training:
 # OUTPUT CONFIGURATION
 # ============================================================================
 output:
-  output_dir: "./training_output"
-  experiment_name: "ucf_deepfake_detector"  # Match model name
+  # Basic output settings
+  output_dir: "/content/drive/MyDrive/trained/training_output"
+  experiment_name: "ucf_deepfake_detector"
+  save_best_only: true                # Save only the best model
+  save_last: true                     # Also save the last checkpoint
   
-  # Checkpoint saving configuration
-  save_best_only: false              # Save regular checkpoints, not just best
-  save_last: true                    # Always save final checkpoint
-  save_model: true                   # Save model state
-  save_optimizer: true               # Save optimizer state for resuming
-  save_scheduler: true               # Save scheduler state for resuming
-  save_logs: true                    # Save training logs
-  save_config: true                  # Save configuration used
+  # Weight file format
+  weight_format: "pth"                # PyTorch format
   
-  # Best model tracking
-  track_best_metric: "val_accuracy"  # Track best validation accuracy
-  save_best_model: true              # This ensures best model is saved
-  best_checkpoint_name: "best_checkpoint.pth"
-  last_checkpoint_name: "last_checkpoint.pth"
-  
-  weight_format: "pth"               # Save in PyTorch format
-  keep_recent_checkpoints: 3    
-  
+  # Performance optimizations
+  save_lightweight: true              # Save lightweight deployment weights
+  keep_recent_checkpoints: 3          # Keep only 3 recent checkpoints
+
 # ============================================================================
 # EXTERNAL TRAINER CONFIGURATION (disabled for standard training)
 # ============================================================================

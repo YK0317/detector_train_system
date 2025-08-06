@@ -1155,17 +1155,19 @@ class UnifiedTrainer:
         if self.config.output.save_last:
             torch.save(checkpoint_data, self.output_dir / f"last_checkpoint.{ext}")
 
-        # Save best checkpoint
-        if is_best and self.config.output.save_best_only:
+        # Save best checkpoint (always save when validation improves)
+        if is_best:
             torch.save(checkpoint_data, self.output_dir / f"best_checkpoint.{ext}")
             self.logger.info(f"💾 Saved best checkpoint: best_checkpoint.{ext}")
 
         # Save periodic full checkpoint (for training resumption)
-        checkpoint_freq = self.config.training.checkpoint_frequency
-        if checkpoint_freq > 0 and epoch % checkpoint_freq == 0:
-            periodic_path = self.output_dir / f"checkpoint_epoch_{epoch}.{ext}"
-            torch.save(checkpoint_data, periodic_path)
-            self.logger.info(f"💾 Saved periodic checkpoint: {periodic_path.name}")
+        # Skip periodic checkpoints if save_best_only is enabled
+        if not self.config.output.save_best_only:
+            checkpoint_freq = self.config.training.checkpoint_frequency
+            if checkpoint_freq > 0 and epoch % checkpoint_freq == 0:
+                periodic_path = self.output_dir / f"checkpoint_epoch_{epoch}.{ext}"
+                torch.save(checkpoint_data, periodic_path)
+                self.logger.info(f"💾 Saved periodic checkpoint: {periodic_path.name}")
 
         # Clean up old checkpoints if configured
         self._cleanup_old_checkpoints(keep_recent)

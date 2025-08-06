@@ -4,7 +4,7 @@
 model:
   name: "xception_deepfake"
   type: "file"
-  path: "./xception.py"
+  path: "/content/drive/MyDrive/trained/xception.py"
   class_name: "Xception"
   architecture: null
   pretrained: false
@@ -18,8 +18,9 @@ model:
 data:
   name: "DeepfakeDetection"
   type: "class_folders"
-  train_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\train"
-  val_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\validation"
+  train_path: "/content/drive/MyDrive/train"
+  val_path: "/content/drive/MyDrive/validation"
+
 
   class_folders:
     real: "real"
@@ -58,11 +59,23 @@ training:
   # resume_from_checkpoint: "./training_output/xception_deepfake/checkpoint_epoch_5.pth"
 
 output:
-  output_dir: "./training_output"
+  output_dir: "/content/drive/MyDrive/trained/training_output"
   experiment_name: "xception_deepfake"
+
+  # Checkpoint saving behavior for continuation
+  save_best_only: false               # ✅ USED: Save regular checkpoints
+  save_last: true                     # ✅ USED: Save final checkpoint
+  save_best_model: true               # ✅ USED: Track and save best model
+  track_best_metric: "val_accuracy"   # ✅ USED: Metric to track for "best"
+  
+  # Checkpoint management
+  keep_recent_checkpoints: 5          # ✅ USED: Keep last 5 checkpoints
+  weight_format: "pth"         
 
 device: "auto"
 seed: 42
 
 description: "Resume Xception training from checkpoint"
 tags: ["xception", "deepfake-detection", "resume-training"]
+
+
