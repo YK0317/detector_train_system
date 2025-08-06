@@ -44,9 +44,9 @@ jobs:
       run: |
         sudo apt-get update -qq
         # Install only essential system libraries for Python packages
-        sudo apt-get install -y libglib2.0-0 libgomp1
-        # Optional libraries (continue on failure)
-        sudo apt-get install -y libgl1-mesa-dev libfontconfig1 || echo "Optional GL libraries not available"
+        sudo apt-get install -y libglib2.0-0 libgomp1 libfontconfig1
+        # Skip GL libraries as they're not essential for testing
+        echo "✅ Essential system dependencies installed"
 
     - name: Install Python dependencies
       run: |
