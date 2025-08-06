@@ -22,13 +22,13 @@ Main Components:
 Example Usage:
     >>> from train_system import UnifiedTrainingWrapper, ModelFactory
     >>> from train_system.adapters import AutoAdapter
-    >>> 
+    >>>
     >>> # Create wrapped model
     >>> wrapper = ModelFactory.create_wrapped_model('resnet18')
-    >>> 
+    >>>
     >>> # Or wrap manually
     >>> wrapper = UnifiedTrainingWrapper(your_model, AutoAdapter())
-    >>> 
+    >>>
     >>> # Train normally
     >>> optimizer = torch.optim.Adam(wrapper.parameters())
     >>> for images, labels in dataloader:
@@ -43,90 +43,121 @@ __author__ = "AI Assistant"
 __email__ = "assistant@example.com"
 
 # Core imports
+_imported_components = []
+
 try:
-    from .core.wrapper import UnifiedTrainingWrapper, ModelFactory
-    from .core.trainer import UnifiedTrainer
-    from .core.dataset import UnifiedDataset
-    
-    # Adapter imports
+    # Configuration imports (minimal dependencies)
+    from .config import (
+        ConfigTemplateManager,
+        ConfigValidator,
+        DataConfig,
+        ModelConfig,
+        TrainingConfig,
+        UnifiedTrainingConfig,
+        ValidationResult,
+    )
+
+    _imported_components.extend(
+        [
+            "ConfigValidator",
+            "ValidationResult",
+            "ConfigTemplateManager",
+            "UnifiedTrainingConfig",
+            "ModelConfig",
+            "DataConfig",
+            "TrainingConfig",
+        ]
+    )
+except ImportError as e:
+    import warnings
+
+    warnings.warn(f"Config components could not be imported: {e}")
+
+try:
+    # Adapter imports (require torch)
     from .adapters import (
-        ModelAdapter,
-        StandardAdapter,
-        LogitsAndFeaturesAdapter,
-        DictOutputAdapter,
+        AutoAdapter,
         CapsuleNetworkAdapter,
         CustomFunctionAdapter,
-        AutoAdapter,
-        get_adapter_for_model
+        DictOutputAdapter,
+        LogitsAndFeaturesAdapter,
+        ModelAdapter,
+        StandardAdapter,
+        get_adapter_for_model,
     )
-    
-    # Configuration imports
-    from .config import (
-        ConfigValidator,
-        ValidationResult,
-        ConfigTemplateManager,
-        UnifiedTrainingConfig,
-        ModelConfig,
-        DataConfig,
-        TrainingConfig
+
+    _imported_components.extend(
+        [
+            "ModelAdapter",
+            "StandardAdapter",
+            "LogitsAndFeaturesAdapter",
+            "DictOutputAdapter",
+            "CapsuleNetworkAdapter",
+            "CustomFunctionAdapter",
+            "AutoAdapter",
+            "get_adapter_for_model",
+        ]
     )
-    
-    # API imports
-    from .api.server import TrainingAPI
-    
+except ImportError as e:
+    import warnings
+
+    warnings.warn(f"Adapter components could not be imported: {e}")
+
+try:
+    # Core training components (require torch)
+    from .core.dataset import UnifiedDataset
+    from .core.trainer import UnifiedTrainer
+    from .core.wrapper import ModelFactory, UnifiedTrainingWrapper
+
+    _imported_components.extend(
+        ["UnifiedTrainingWrapper", "ModelFactory", "UnifiedTrainer", "UnifiedDataset"]
+    )
+except ImportError as e:
+    import warnings
+
+    warnings.warn(f"Core training components could not be imported: {e}")
+
+try:
     # Registry imports
     from .registry import (
         AdapterRegistry,
         TrainerRegistry,
-        initialize_registries,
-        list_available_components,
-        scan_additional_paths,
         get_component_by_name,
+        initialize_registries,
+        is_component_available,
+        list_available_components,
         register_component,
-        is_component_available
+        scan_additional_paths,
     )
-    
-except ImportError as e:
-    # Graceful handling of import errors during development
-    import warnings
-    warnings.warn(f"Some train_system components could not be imported: {e}")
 
-__all__ = [
-    # Core classes
-    "UnifiedTrainingWrapper",
-    "ModelFactory", 
-    "UnifiedTrainer",
-    "UnifiedDataset",
-    
-    # Adapters
-    "ModelAdapter",
-    "StandardAdapter",
-    "LogitsAndFeaturesAdapter", 
-    "DictOutputAdapter",
-    "CapsuleNetworkAdapter",
-    "CustomFunctionAdapter",
-    "AutoAdapter",
-    "get_adapter_for_model",
-    
-    # Configuration
-    "ConfigValidator",
-    "ValidationResult",
-    "ConfigTemplateManager",
-    "UnifiedTrainingConfig",
-    "ModelConfig",
-    "DataConfig", 
-    "TrainingConfig",
-    
-    # API
-    "TrainingAPI",
-    
-    # Registry
-    "AdapterRegistry",
-    "TrainerRegistry", 
-    "initialize_registries",
-    "list_available_components",
-    "scan_additional_paths",
-    "get_component_by_name",
-    "register_component",
-    "is_component_available",
-]
+    _imported_components.extend(
+        [
+            "AdapterRegistry",
+            "TrainerRegistry",
+            "initialize_registries",
+            "list_available_components",
+            "scan_additional_paths",
+            "get_component_by_name",
+            "register_component",
+            "is_component_available",
+        ]
+    )
+except ImportError as e:
+    import warnings
+
+    warnings.warn(f"Registry components could not be imported: {e}")
+
+try:
+    # API imports (require Flask)
+    from .api.server import TrainingAPI
+
+    _imported_components.append("TrainingAPI")
+except ImportError as e:
+    import warnings
+
+    warnings.warn(
+        f"API components could not be imported (Flask may not be available): {e}"
+    )
+
+# Dynamic __all__ based on successfully imported components
+__all__ = _imported_components

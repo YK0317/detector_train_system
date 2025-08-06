@@ -1,0 +1,213 @@
+# Complete Configuration for UCF Training
+# This trains the UCF deepfake detection model using train-system
+
+# ============================================================================
+# MODEL CONFIGURATION
+# ============================================================================
+model:
+  # Basic model information
+  name: "ucf_deepfake_detector"
+  type: "file"                         # Load from file since we have the UCF implementation
+  path: "models/ucf_standalone.py"     # Path to UCF model implementation
+  class_name: "UCFStandalone"          # Class name in the file
+  architecture: "ucf"                  # Custom architecture
+  pretrained: false                    # Train from scratch or load checkpoint
+  num_classes: 2                       # Real vs Fake
+  
+  # Pretrained weights configuration
+  pretrained_weights: null             # Set path to pretrained weights if available
+  strict_loading: false                # Allow partial loading for flexibility
+  load_optimizer: false               
+  load_scheduler: false               
+  
+  # Model-specific parameters
+  img_size: 256                        # UCF expects 256x256 images
+  dropout: 0.2                         # Dropout rate for regularization
+  freeze_backbone: false               # Allow full training
+  
+  # Additional model arguments (passed to model constructor)
+  model_args:
+    num_classes: 2                     # Real vs Fake
+    inc: 3                             # RGB input channels
+    encoder_feat_dim: 2048             # Feature dimension from Xception backbone
+  
+  # Adapter configuration
+  adapter: "auto"                      # Auto-detect adapter needs
+  adapter_config: {}
+  
+  # External adapter configuration (not needed for UCF)
+  external_adapter:
+    script_path: null
+    class_name: null
+    required_packages: []
+    parameters: {}
+
+# ============================================================================
+# DATA CONFIGURATION
+# ============================================================================
+data:
+  # Basic dataset information
+  name: "UCF_Dataset"
+  type: "class_folders"                # Expect real/fake folder structure
+  train_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\train"
+  val_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\validation"
+  # test_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\test"
+  
+  # Class folder configuration
+  class_folders:
+    real: "real"                       # Real images folder
+    fake: "fake"                       # Fake images folder
+  real_path: null                      # Not used with class_folders type
+  fake_path: null                      # Not used with class_folders type
+  
+  # Data processing settings
+  img_size: 256                        # UCF expects 256x256 images
+  batch_size: 8                        # Reasonable batch size for UCF
+  num_workers: 4                       # Data loading workers
+  pin_memory: true                     # Faster GPU transfer
+  shuffle_train: true                  # Shuffle training data
+  
+  # Data augmentation settings
+  augmentation:
+    enabled: true                      # Enable augmentations
+    horizontal_flip: true              # Random horizontal flip
+    rotation: 10                       # Random rotation up to 10 degrees
+    color_jitter: true                 # Color jittering
+    normalize: true                    # Normalize images
+    normalization_mean: [0.5, 0.5, 0.5]  # UCF normalization
+    normalization_std: [0.5, 0.5, 0.5]   # UCF normalization
+    
+    # Additional augmentation options
+    vertical_flip: false               # Usually not good for faces
+    brightness: 0.1                    # Brightness adjustment
+    contrast: 0.1                      # Contrast adjustment
+    saturation: 0.1                    # Saturation adjustment
+    hue: 0.05                         # Hue adjustment
+    gaussian_blur: false               # Skip Gaussian blur
+    blur_kernel_size: 3
+    blur_sigma: [0.1, 2.0]
+    random_crop: false                 # Use resize instead of crop
+    random_crop_size: null
+    center_crop: false
+    center_crop_size: null
+  
+  # Dataset-specific parameters
+  max_samples: null                    # Use all available samples
+  class_mapping:
+    real: 0                           # Real class = 0
+    fake: 1                           # Fake class = 1
+  
+  # Automatic train/val splitting configuration
+  auto_split_enabled: false           # Use provided train/val split
+  train_split_ratio: 0.8             # Not used since auto_split_enabled is false
+  split_seed: 42
+
+# ============================================================================
+# TRAINING CONFIGURATION
+# ============================================================================
+training:
+  # Basic training parameters
+  epochs: 50                          # Number of training epochs
+  learning_rate: 0.001                # Initial learning rate
+  weight_decay: 0.0001                # L2 regularization
+  optimizer: "adam"                   # Adam optimizer
+  scheduler: "cosine"                 # Cosine annealing scheduler
+  
+  # Training settings
+  gradient_clipping: 1.0              # Gradient clipping threshold
+  mixed_precision: true               # Use AMP for faster training
+  accumulation_steps: 1               # Gradient accumulation
+  
+  # Validation and saving frequencies
+  val_frequency: 1                    # Validate every epoch
+  save_frequency: 5                   # Save checkpoint every 5 epochs
+  early_stopping_patience: 10        # Stop if no improvement for 10 epochs
+  
+  # Performance optimizations
+  metrics_frequency: 100              # Calculate metrics every 100 steps
+  checkpoint_frequency: 5             # Save full checkpoint every 5 epochs
+  non_blocking_transfer: true         # Non-blocking GPU transfer
+  efficient_validation: true         # Memory-efficient validation
+  
+  # Logging settings
+  log_interval: 50                    # Log every 50 steps
+  tensorboard: true                   # Enable TensorBoard
+  wandb: false                        # Disable Weights & Biases
+  
+  # Scheduler parameters
+  scheduler_params:
+    # For cosine scheduler:
+    T_max: 50                         # Match number of epochs
+    eta_min: 0.00001                  # Minimum learning rate
+
+# ============================================================================
+# OUTPUT CONFIGURATION
+# ============================================================================
+output:
+  output_dir: "./training_output"
+  experiment_name: "ucf_deepfake_detector"  # Match model name
+  
+  # Checkpoint saving configuration
+  save_best_only: false              # Save regular checkpoints, not just best
+  save_last: true                    # Always save final checkpoint
+  save_model: true                   # Save model state
+  save_optimizer: true               # Save optimizer state for resuming
+  save_scheduler: true               # Save scheduler state for resuming
+  save_logs: true                    # Save training logs
+  save_config: true                  # Save configuration used
+  
+  # Best model tracking
+  track_best_metric: "val_accuracy"  # Track best validation accuracy
+  save_best_model: true              # This ensures best model is saved
+  best_checkpoint_name: "best_checkpoint.pth"
+  last_checkpoint_name: "last_checkpoint.pth"
+  
+  weight_format: "pth"               # Save in PyTorch format
+  keep_recent_checkpoints: 3    
+  
+# ============================================================================
+# EXTERNAL TRAINER CONFIGURATION (disabled for standard training)
+# ============================================================================
+external_trainer:
+  enabled: false                      # Use standard train-system training
+  name: null
+  skip_unified_data_loading: false
+  script_path: null
+  class_name: null
+  
+  # Parameters (not used)
+  parameters: {}
+  
+  # Override settings (not used)
+  override_optimizer: false
+  override_scheduler: false
+  override_loss: false
+  override_saving: false
+
+# ============================================================================
+# REGISTRY CONFIGURATION
+# ============================================================================
+registry:
+  auto_scan: true                     # Enable automatic component scanning
+  verbose: false                      # Quiet registry output
+  force_rescan: false                 # Don't force rescan
+  adapter_paths: []                   # Additional adapter paths
+  trainer_paths: []                   # Additional trainer paths
+
+# ============================================================================
+# SYSTEM SETTINGS
+# ============================================================================
+device: "auto"                        # Auto-detect best device
+seed: 42                             # Random seed for reproducibility
+deterministic: false                 # Enable for fully reproducible results (slower)
+
+# ============================================================================
+# METADATA
+# ============================================================================
+description: "UCF deepfake detection model training with complete feature extraction and classification"
+tags:
+  - "ucf"
+  - "deepfake_detection"
+  - "xception"
+  - "forgery_detection"
+  - "classification"

@@ -4,9 +4,10 @@ Memory optimization utilities for train_system
 """
 
 import gc
-import torch
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
+
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +23,19 @@ def get_memory_usage() -> Dict[str, Any]:
     """Get current memory usage statistics"""
     if torch.cuda.is_available():
         return {
-            'allocated_mb': torch.cuda.memory_allocated() / 1024**2,
-            'cached_mb': torch.cuda.memory_reserved() / 1024**2,
-            'max_allocated_mb': torch.cuda.max_memory_allocated() / 1024**2,
-            'device_name': torch.cuda.get_device_name(),
-            'device_count': torch.cuda.device_count()
+            "allocated_mb": torch.cuda.memory_allocated() / 1024**2,
+            "cached_mb": torch.cuda.memory_reserved() / 1024**2,
+            "max_allocated_mb": torch.cuda.max_memory_allocated() / 1024**2,
+            "device_name": torch.cuda.get_device_name(),
+            "device_count": torch.cuda.device_count(),
         }
-    return {'cpu_only': True}
+    return {"cpu_only": True}
 
 
 def log_memory_usage(stage: str = ""):
     """Log current memory usage"""
     memory_info = get_memory_usage()
-    if 'cpu_only' in memory_info:
+    if "cpu_only" in memory_info:
         logger.info(f"🧠 Memory ({stage}): CPU only")
     else:
         logger.info(
@@ -47,10 +48,13 @@ def log_memory_usage(stage: str = ""):
 def move_data_to_device(data, device: torch.device, non_blocking: bool = True):
     """Efficiently move data to device"""
     if isinstance(data, dict):
-        return {key: move_data_to_device(value, device, non_blocking) for key, value in data.items()}
+        return {
+            key: move_data_to_device(value, device, non_blocking)
+            for key, value in data.items()
+        }
     elif isinstance(data, (list, tuple)):
         return [move_data_to_device(item, device, non_blocking) for item in data]
-    elif hasattr(data, 'to'):
+    elif hasattr(data, "to"):
         return data.to(device, non_blocking=non_blocking)
     else:
         return data
@@ -66,7 +70,7 @@ def setup_cuda_optimizations():
             logger.info("✅ Enabled TF32 optimizations")
         except:
             pass
-        
+
         # Enable cuDNN benchmarking for consistent input sizes
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = False
@@ -77,37 +81,37 @@ def setup_cuda_optimizations():
 
 class MemoryTracker:
     """Track memory usage throughout training"""
-    
+
     def __init__(self):
         self.baseline = None
         self.peak_usage = 0
-        
+
     def set_baseline(self):
         """Set baseline memory usage"""
         if torch.cuda.is_available():
             self.baseline = torch.cuda.memory_allocated()
             torch.cuda.reset_peak_memory_stats()
-    
+
     def check_peak(self):
         """Check and update peak memory usage"""
         if torch.cuda.is_available():
             current_peak = torch.cuda.max_memory_allocated()
             if current_peak > self.peak_usage:
                 self.peak_usage = current_peak
-                
+
     def get_stats(self) -> Dict[str, float]:
         """Get memory statistics"""
         if not torch.cuda.is_available():
-            return {'cpu_only': True}
-            
+            return {"cpu_only": True}
+
         current = torch.cuda.memory_allocated()
         peak = torch.cuda.max_memory_allocated()
-        
+
         stats = {
-            'current_mb': current / 1024**2,
-            'peak_mb': peak / 1024**2,
-            'baseline_mb': (self.baseline or 0) / 1024**2,
-            'increase_mb': (current - (self.baseline or 0)) / 1024**2
+            "current_mb": current / 1024**2,
+            "peak_mb": peak / 1024**2,
+            "baseline_mb": (self.baseline or 0) / 1024**2,
+            "increase_mb": (current - (self.baseline or 0)) / 1024**2,
         }
-        
+
         return stats

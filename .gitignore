@@ -11,6 +11,9 @@ train_system/training_output/
 checkpoints/
 logs/
 
+# Submodules - managed separately
+Capsule-Forensics-v2/
+
 # Python cache
 __pycache__/
 *.pyc

@@ -1,0 +1,113 @@
+# ============================================================================
+# MINIMAL RESUME TRAINING CONFIGURATION
+# This config shows ONLY the fields that are actually used in resume training
+# ============================================================================
+
+# ============================================================================
+# MODEL - MUST MATCH ORIGINAL EXACTLY (Required for checkpoint loading)
+# ============================================================================
+model:
+  name: "ucf_deepfake_detector"        # ✅ USED: Must match original training
+  type: "file"                         # ✅ USED: Must match original training
+  path: "models/ucf_standalone.py"     # ✅ USED: Must match original training
+  class_name: "UCFStandalone"          # ✅ USED: Must match original training
+  num_classes: 2                       # ✅ USED: Must match original training
+  
+  model_args:                          # ✅ USED: Must match original training
+    num_classes: 2
+    inc: 3
+    encoder_feat_dim: 2048
+
+# ============================================================================
+# DATA - CAN BE MODIFIED (New data paths for continued training)
+# ============================================================================
+data:
+  name: "UCF_Resume_Training"          # ✅ USED: Can be changed
+  type: "class_folders"                # ✅ USED: Should match original
+  train_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\train"  # ✅ USED: Can be different
+  val_path: "C:\\Users\\mingw\\Desktop\\training\\URS-train\\validation"    # ✅ USED: Can be different
+  
+  class_folders:                       # ✅ USED: Should match original
+    real: "real"
+    fake: "fake"
+  
+  class_mapping:                       # ✅ USED: Must match original
+    real: 0
+    fake: 1
+  
+  img_size: 256                        # ✅ USED: Should match original
+  batch_size: 8                        # ✅ USED: Can be changed
+  num_workers: 4                       # ✅ USED: Can be changed
+
+# ============================================================================
+# TRAINING - USED FOR CONTINUATION SETTINGS
+# ============================================================================
+training:
+  epochs: 75                           # ✅ USED: NEW total epochs (extends training)
+  learning_rate: 0.0005                # ✅ USED: Can override if not using scheduler state
+  
+  # Resume settings
+  resume_from_checkpoint: "./training_output/ucf_deepfake_detector/checkpoint_epoch_50.pth"  # ✅ USED: Path to checkpoint
+  
+  # Training control settings that will be used
+  save_frequency: 5                    # ✅ USED: How often to save new checkpoints
+  val_frequency: 1                     # ✅ USED: How often to validate
+  early_stopping_patience: 15         # ✅ USED: New early stopping patience
+  log_interval: 50                     # ✅ USED: Logging frequency
+
+# ============================================================================
+# OUTPUT - FULLY CONTROLLED BY RESUME CONFIG
+# ============================================================================
+output:
+  output_dir: "./training_output"                    # ✅ USED: Where to save continued training
+  experiment_name: "ucf_deepfake_detector_resume"   # ✅ USED: New experiment name
+  
+  # Checkpoint saving behavior for continuation
+  save_best_only: false               # ✅ USED: Save regular checkpoints
+  save_last: true                     # ✅ USED: Save final checkpoint
+  save_best_model: true               # ✅ USED: Track and save best model
+  track_best_metric: "val_accuracy"   # ✅ USED: Metric to track for "best"
+  
+  # Checkpoint management
+  keep_recent_checkpoints: 5          # ✅ USED: Keep last 5 checkpoints
+  weight_format: "pth"                # ✅ USED: Save format
+
+# ============================================================================
+# SYSTEM SETTINGS
+# ============================================================================
+device: "auto"                        # ✅ USED: Device selection
+seed: 42                             # ✅ USED: Random seed
+
+# ============================================================================
+# METADATA
+# ============================================================================
+description: "Resume UCF deepfake detector training from checkpoint epoch 50"
+tags: ["ucf", "deepfake-detection", "resume-training"]
+
+# ============================================================================
+# FIELDS NOT INCLUDED (Restored from checkpoint or ignored in resume training)
+# ============================================================================
+# 
+# ❌ NOT USED IN RESUME - These are restored from checkpoint:
+# - optimizer: "adam"                 # Restored from checkpoint
+# - scheduler: "cosine"               # Restored from checkpoint  
+# - scheduler_params                  # Restored from checkpoint
+# - weight_decay: 0.0001             # Restored from checkpoint
+# - best_val_accuracy                # Restored from checkpoint
+# - training_losses                  # Restored from checkpoint
+# - validation_accuracies            # Restored from checkpoint
+# - current_epoch                    # Restored from checkpoint
+#
+# ❌ NOT USED IN RESUME - These are typically ignored:
+# - model.pretrained: false          # Ignored (loading from checkpoint)
+# - model.architecture               # Must match, but not actively used
+# - model.adapter                    # Auto-detected from model
+# - data.augmentation                # Can be included but often ignored
+# - data.max_samples                 # Can be used if specified
+# - training.mixed_precision         # Usually follows original training
+# - training.gradient_clipping       # Usually follows original training
+#
+# 💡 OPTIONAL FIELDS (Can be included if you want to override defaults):
+# - data.augmentation: {...}         # If you want different augmentation
+# - training.mixed_precision: true   # If you want to change precision
+# - training.gradient_clipping: 1.0  # If you want different clipping

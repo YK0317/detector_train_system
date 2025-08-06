@@ -1,0 +1,38 @@
+# Test requirements for CI pipeline
+# Install with: pip install -r requirements-test.txt
+
+# Core testing framework
+pytest>=6.2.0,<8.0.0
+pytest-cov>=3.0.0,<5.0.0
+pytest-xdist>=2.0.0,<4.0.0  # For parallel test execution
+
+# Core dependencies (minimal versions for CI)
+torch>=1.9.0,<2.5.0
+torchvision>=0.10.0,<0.20.0
+numpy>=1.21.0,<1.27.0
+Pillow>=8.3.0,<11.0.0
+PyYAML>=6.0,<7.0
+tqdm>=4.62.0,<5.0.0
+
+# Training utilities (required for core components)
+tensorboard>=2.7.0,<3.0.0
+pandas>=1.3.0,<2.3.0
+
+# Web framework (for API components)
+flask>=2.0.0,<4.0.0
+flask-cors>=3.0.0,<5.0.0
+requests>=2.25.0,<3.0.0
+
+# Essential for testing
+setuptools>=61.0
+wheel>=0.37.0
+packaging>=21.0
+
+# Mock and testing utilities
+mock>=4.0.0;python_version<'3.3'  # Built-in for Python 3.3+
+
+# Optional: Coverage reporting
+coverage>=6.0,<8.0
+
+# Optional: Performance testing
+pytest-benchmark>=3.4.0,<5.0.0
