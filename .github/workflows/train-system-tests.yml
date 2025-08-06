@@ -2,7 +2,7 @@ name: Train System Tests
 
 on:
   push:
-    branches: [ main, local_laptop, develop ]
+    branches: [ main, develop ]
     paths:
       - 'train_system/**'
       - '.github/workflows/train-system-tests.yml'
