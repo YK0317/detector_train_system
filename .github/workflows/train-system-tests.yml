@@ -392,26 +392,26 @@ jobs:
             print(f'❌ Configuration imports failed: {e}')
             sys.exit(1)
           
-        # Test optional imports
-        try:
-          from train_system.api import TrainingAPI
-          print('✅ Basic API imports successful')
-        except ImportError as e:
-          print(f'⚠️ Basic API imports failed (expected without web dependencies): {e}')
-        
-        # Test enhanced API imports (should fail without web dependencies)
-        try:
-          from train_system.api.web_server import EnhancedTrainingAPI
-          print('⚠️ Enhanced API imports unexpectedly successful without web dependencies')
-        except ImportError as e:
-          print(f'✅ Enhanced API imports correctly failed without web dependencies: {e}')
-        
-        try:
-          from train_system.cli import main
-          print('✅ CLI imports successful') 
-        except ImportError as e:
-          print(f'❌ CLI imports failed: {e}')
+          # Test optional imports
+          try:
+            from train_system.api import TrainingAPI
+            print('✅ Basic API imports successful')
+          except ImportError as e:
+            print(f'⚠️ Basic API imports failed (expected without web dependencies): {e}')
           
+          # Test enhanced API imports (should fail without web dependencies)
+          try:
+            from train_system.api.web_server import EnhancedTrainingAPI
+            print('⚠️ Enhanced API imports unexpectedly successful without web dependencies')
+          except ImportError as e:
+            print(f'✅ Enhanced API imports correctly failed without web dependencies: {e}')
+          
+          try:
+            from train_system.cli import main
+            print('✅ CLI imports successful') 
+          except ImportError as e:
+            print(f'❌ CLI imports failed: {e}')
+            
         except Exception as e:
           print(f'❌ Import test failed: {e}')
           sys.exit(1)
