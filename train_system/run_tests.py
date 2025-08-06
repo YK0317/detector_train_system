@@ -79,14 +79,18 @@ def check_installation():
         # Test conditional imports (like our improved test_basic.py)
         try:
             from train_system import ModelFactory, UnifiedTrainingWrapper
+
             print("✅ Core PyTorch components available")
         except ImportError as e:
             print(f"⚠️ PyTorch components not available: {e}")
-            print("This is expected if PyTorch is not installed or other dependencies are missing")
+            print(
+                "This is expected if PyTorch is not installed or other dependencies are missing"
+            )
 
         # Test config imports (should always work)
         try:
             from train_system.config import UnifiedTrainingConfig
+
             print("✅ Configuration components available")
         except ImportError as e:
             print(f"❌ Configuration imports failed: {e}")

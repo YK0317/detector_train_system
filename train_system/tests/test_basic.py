@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 try:
     import torch
     import torchvision.models as models
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -24,6 +25,7 @@ except ImportError:
 # Try importing train_system first to check basic functionality
 try:
     import train_system
+
     print("✅ Basic train_system import successful!")
 except ImportError as e:
     print(f"❌ Failed to import train_system: {e}")
@@ -41,14 +43,19 @@ if TORCH_AVAILABLE:
         from train_system import ModelFactory, UnifiedTrainingWrapper
         from train_system.adapters import AutoAdapter, StandardAdapter
         from train_system.core.wrapper import ModelUtils
+
         print("✅ PyTorch-dependent imports successful!")
     except ImportError as e:
         print(f"⚠️ Some PyTorch components not available: {e}")
 
 # Always try to import config components (should work without torch)
 try:
-    from train_system.config import (ConfigTemplateManager, ConfigValidator,
-                                     UnifiedTrainingConfig)
+    from train_system.config import (
+        ConfigTemplateManager,
+        ConfigValidator,
+        UnifiedTrainingConfig,
+    )
+
     print("✅ Config imports successful!")
 except ImportError as e:
     print(f"⚠️ Config components not available: {e}")
@@ -60,13 +67,15 @@ except ImportError as e:
 def test_model_wrapping():
     """Test basic model wrapping functionality"""
     print("\n🧪 Testing Model Wrapping...")
-    
+
     if not TORCH_AVAILABLE:
         print("⚠️ Skipping model wrapping tests - PyTorch not available")
         return
-    
+
     if ModelFactory is None or UnifiedTrainingWrapper is None:
-        print("⚠️ Skipping model wrapping tests - ModelFactory/UnifiedTrainingWrapper not available")
+        print(
+            "⚠️ Skipping model wrapping tests - ModelFactory/UnifiedTrainingWrapper not available"
+        )
         return
 
     # Create a simple model
@@ -102,11 +111,11 @@ def test_model_wrapping():
 def test_adapters():
     """Test adapter functionality"""
     print("\n🧪 Testing Adapters...")
-    
+
     if not TORCH_AVAILABLE:
         print("⚠️ Skipping adapter tests - PyTorch not available")
         return
-    
+
     if AutoAdapter is None:
         print("⚠️ Skipping adapter tests - AutoAdapter not available")
         return
@@ -144,7 +153,7 @@ def test_adapters():
 def test_configuration():
     """Test configuration management"""
     print("\n🧪 Testing Configuration...")
-    
+
     if ConfigTemplateManager is None or ConfigValidator is None:
         print("⚠️ Skipping configuration tests - Config components not available")
         return
@@ -173,11 +182,11 @@ def test_configuration():
 def test_model_utils():
     """Test ModelUtils functionality"""
     print("\n🧪 Testing ModelUtils...")
-    
+
     if not TORCH_AVAILABLE:
         print("⚠️ Skipping model utils tests - PyTorch not available")
         return
-    
+
     if ModelUtils is None:
         print("⚠️ Skipping model utils tests - ModelUtils not available")
         return

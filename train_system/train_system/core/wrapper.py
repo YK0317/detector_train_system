@@ -241,10 +241,15 @@ class ModelFactory:
         adapter_name: str, adapter_config: Dict[str, Any] = None
     ) -> ModelAdapter:
         """Get adapter instance by name with optional configuration"""
-        from ..adapters import (AutoAdapter, CapsuleNetworkAdapter,
-                                DictOutputAdapter, LogitsAndFeaturesAdapter,
-                                StandardAdapter, UCFAdapter,
-                                get_adapter_for_model)
+        from ..adapters import (
+            AutoAdapter,
+            CapsuleNetworkAdapter,
+            DictOutputAdapter,
+            LogitsAndFeaturesAdapter,
+            StandardAdapter,
+            UCFAdapter,
+            get_adapter_for_model,
+        )
 
         if adapter_config is None:
             adapter_config = {}

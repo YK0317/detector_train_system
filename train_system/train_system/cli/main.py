@@ -14,8 +14,7 @@ from pathlib import Path
 import torch
 import yaml
 
-from ..config import (ConfigTemplateManager, ConfigValidator,
-                      UnifiedTrainingConfig)
+from ..config import ConfigTemplateManager, ConfigValidator, UnifiedTrainingConfig
 from ..core.trainer import UnifiedTrainer
 
 
@@ -303,9 +302,11 @@ def scan_components_command(
 ):
     """CLI command to scan additional paths"""
     try:
-        from ..registry import (initialize_registries,
-                                list_available_components,
-                                scan_additional_paths)
+        from ..registry import (
+            initialize_registries,
+            list_available_components,
+            scan_additional_paths,
+        )
 
         print("🔍 Initializing registries...")
         initialize_registries()

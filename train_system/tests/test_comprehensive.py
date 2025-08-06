@@ -72,9 +72,11 @@ class TestSystemImports:
         try:
             from train_system import ModelFactory, UnifiedTrainingWrapper
             from train_system.adapters import AutoAdapter, StandardAdapter
-            from train_system.config import (ConfigTemplateManager,
-                                             ConfigValidator,
-                                             UnifiedTrainingConfig)
+            from train_system.config import (
+                ConfigTemplateManager,
+                ConfigValidator,
+                UnifiedTrainingConfig,
+            )
             from train_system.core.dataset import UnifiedDataset
             from train_system.core.trainer import UnifiedTrainer
             from train_system.core.wrapper import ModelUtils
@@ -466,9 +468,11 @@ class TestIntegration:
 
     def test_complete_config_workflow(self):
         """Test complete configuration workflow"""
-        from train_system.config import (ConfigTemplateManager,
-                                         ConfigValidator,
-                                         UnifiedTrainingConfig)
+        from train_system.config import (
+            ConfigTemplateManager,
+            ConfigValidator,
+            UnifiedTrainingConfig,
+        )
 
         # 1. Get template
         template = ConfigTemplateManager.get_template("torchvision")
