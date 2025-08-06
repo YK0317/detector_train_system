@@ -99,11 +99,13 @@ core_requirements = [
     "pathlib-compat>=1.0.0;python_version<'3.4'",  # For older Python
 ]
 
-# Web API dependencies
+# Web API dependencies (optional)
 web_requirements = [
     "flask>=2.0.0",
     "flask-cors>=3.0.0",
+    "flask-socketio>=5.0.0",
     "requests>=2.25.0",
+    "werkzeug>=2.0.0",
 ]
 
 # Development dependencies
@@ -191,7 +193,6 @@ setup(
             "train-system=train_system.cli.main:main",
             "ts-train=train_system.cli.main:train_command",
             "ts-dry-run=train_system.cli.main:dry_run_command",
-            "ts-api=train_system.api.server:run_server",
             "ts-template=train_system.cli.main:template_command",
             "ts-config=train_system.cli.main:complete_config_command",
             "ts-validate=train_system.cli.main:validate_command",

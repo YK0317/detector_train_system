@@ -1,0 +1,28 @@
+# Enhanced API Dependencies for Web Deployment
+# Add these to your main requirements.txt or install separately
+
+# Core Flask components
+flask>=2.0.0
+flask-cors>=3.0.0
+flask-socketio>=5.0.0
+
+# File handling and security
+werkzeug>=2.0.0
+
+# Background task processing (optional but recommended for production)
+celery>=5.2.0
+redis>=4.0.0
+
+# Database support (optional for persistent storage)
+sqlalchemy>=1.4.0
+flask-sqlalchemy>=2.5.0
+
+# Authentication (for production deployment)
+flask-login>=0.6.0
+flask-jwt-extended>=4.0.0
+
+# File upload progress tracking
+tqdm>=4.60.0
+
+# Additional utilities
+python-multipart>=0.0.5

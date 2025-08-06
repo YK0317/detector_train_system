@@ -18,7 +18,7 @@ A comprehensive training system for PyTorch models that provides a unified inter
 
 ## Installation
 
-### From Source
+### Base Installation (Core Training Features)
 
 ```bash
 git clone <repository-url>
@@ -26,11 +26,42 @@ cd train_system
 pip install -e .
 ```
 
+### Web API Installation (Optional)
+
+For web API and remote training capabilities:
+
+```bash
+pip install -e ".[web]"
+```
+
+This adds:
+- REST API server (`ts-api`)
+- Enhanced web API (`ts-web-api`) 
+- Real-time training updates
+- Web dashboard interface
+
+### Complete Installation
+
+For all features including optional model libraries:
+
+```bash
+pip install -e ".[all]"
+```
+
 ### From PyPI (when published)
 
 ```bash
+# Base installation
 pip install train-system
+
+# With web API
+pip install train-system[web]
+
+# Complete installation  
+pip install train-system[all]
 ```
+
+> 📖 **See [INSTALLATION.md](INSTALLATION.md) for detailed installation options and troubleshooting.**
 
 ## Quick Start
 

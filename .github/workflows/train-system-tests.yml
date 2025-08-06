@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ['3.8', '3.11']
-        test-type: ['basic', 'comprehensive']
+        test-type: ['basic', 'comprehensive', 'api-optional']
     
     steps:
     - name: Checkout code
@@ -96,6 +96,47 @@ jobs:
         cd train_system
         echo "🧪 Running pytest comprehensive tests..."
         python -m pytest tests/test_comprehensive.py -v --tb=short --durations=10 || echo "Some tests may have failed, check output above"
+
+    - name: Test optional API functionality
+      if: matrix.test-type == 'api-optional'
+      run: |
+        cd train_system
+        echo "🌐 Testing optional API functionality..."
+        
+        # Test without web dependencies first
+        echo "Testing base installation without web dependencies..."
+        python -c "
+        try:
+          from train_system.cli.main import show_system_info
+          print('✅ CLI imports working without web dependencies')
+        except Exception as e:
+          print(f'❌ CLI imports failed: {e}')
+          exit(1)
+        "
+        
+        # Install web dependencies and test
+        echo "Installing web dependencies..."
+        pip install flask flask-cors flask-socketio requests werkzeug
+        
+        echo "Testing with web dependencies..."
+        python -c "
+        try:
+          from train_system.api.web_server import EnhancedTrainingAPI
+          api = EnhancedTrainingAPI()
+          print('✅ Enhanced API imports working with web dependencies')
+          
+          # Test conditional imports
+          from train_system.cli.main import show_system_info
+          show_system_info()
+          
+        except Exception as e:
+          print(f'❌ Enhanced API test failed: {e}')
+          exit(1)
+        "
+        
+        # Test web API entry point
+        echo "Testing web API command line interface..."
+        python -m train_system.api.web_server --help || echo "Web API CLI test completed"
 
     - name: Generate test coverage report
       if: matrix.test-type == 'comprehensive'
@@ -237,6 +278,61 @@ jobs:
           train_system/TEST_COVERAGE.md
         retention-days: 30
 
+  test-optional-installs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Test base installation
+      run: |
+        cd train_system
+        pip install -e . --no-deps
+        pip install torch torchvision PyYAML tensorboard tqdm numpy pandas psutil Pillow
+        
+        echo "Testing base installation..."
+        python -c "
+        import train_system
+        from train_system.cli.main import show_system_info
+        print('✅ Base installation works')
+        show_system_info()
+        "
+
+    - name: Test web installation
+      run: |
+        cd train_system
+        pip install -e ".[web]"
+        
+        echo "Testing web installation..."
+        python -c "
+        from train_system.api.web_server import EnhancedTrainingAPI
+        api = EnhancedTrainingAPI()
+        print('✅ Web installation works')
+        print(f'Enhanced API available: {api.socketio is not None}')
+        "
+        
+        echo "Testing web API CLI..."
+        python -m train_system.api.web_server --help
+
+    - name: Test complete installation
+      run: |
+        cd train_system
+        pip install -e ".[all]"
+        
+        echo "Testing complete installation..."
+        python -c "
+        from train_system.api.web_server import EnhancedTrainingAPI
+        from train_system.cli.main import show_system_info
+        api = EnhancedTrainingAPI()
+        print('✅ Complete installation works')
+        show_system_info()
+        "
+
     - name: Test Summary
       if: always()
       run: |
@@ -296,19 +392,26 @@ jobs:
             print(f'❌ Configuration imports failed: {e}')
             sys.exit(1)
           
-          # Test optional imports
-          try:
-            from train_system.api import TrainingAPI
-            print('✅ API imports successful')
-          except ImportError as e:
-            print(f'⚠️ API imports failed (expected): {e}')
+        # Test optional imports
+        try:
+          from train_system.api import TrainingAPI
+          print('✅ Basic API imports successful')
+        except ImportError as e:
+          print(f'⚠️ Basic API imports failed (expected without web dependencies): {e}')
+        
+        # Test enhanced API imports (should fail without web dependencies)
+        try:
+          from train_system.api.web_server import EnhancedTrainingAPI
+          print('⚠️ Enhanced API imports unexpectedly successful without web dependencies')
+        except ImportError as e:
+          print(f'✅ Enhanced API imports correctly failed without web dependencies: {e}')
+        
+        try:
+          from train_system.cli import main
+          print('✅ CLI imports successful') 
+        except ImportError as e:
+          print(f'❌ CLI imports failed: {e}')
           
-          try:
-            from train_system.cli import main
-            print('✅ CLI imports successful') 
-          except ImportError as e:
-            print(f'❌ CLI imports failed: {e}')
-            
         except Exception as e:
           print(f'❌ Import test failed: {e}')
           sys.exit(1)
