@@ -5,14 +5,15 @@ Unified Training Wrapper Core
 The main wrapper class that makes any standalone model trainable.
 """
 
-import torch
-import torch.nn as nn
-from typing import Dict, Any, Optional
+import importlib.util
 import logging
 import os
-import importlib.util
+from typing import Any, Dict, Optional
 
-from ..adapters import ModelAdapter, AutoAdapter
+import torch
+import torch.nn as nn
+
+from ..adapters import AutoAdapter, ModelAdapter
 
 
 class UnifiedTrainingWrapper(nn.Module):
@@ -240,15 +241,10 @@ class ModelFactory:
         adapter_name: str, adapter_config: Dict[str, Any] = None
     ) -> ModelAdapter:
         """Get adapter instance by name with optional configuration"""
-        from ..adapters import (
-            AutoAdapter,
-            StandardAdapter,
-            LogitsAndFeaturesAdapter,
-            DictOutputAdapter,
-            UCFAdapter,
-            CapsuleNetworkAdapter,
-            get_adapter_for_model,
-        )
+        from ..adapters import (AutoAdapter, CapsuleNetworkAdapter,
+                                DictOutputAdapter, LogitsAndFeaturesAdapter,
+                                StandardAdapter, UCFAdapter,
+                                get_adapter_for_model)
 
         if adapter_config is None:
             adapter_config = {}

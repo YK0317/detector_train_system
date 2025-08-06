@@ -3,16 +3,17 @@ Standalone BLIP-based Deepfake Detection Model
 Self-contained implementation that doesn't require the full BLIP codebase
 """
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import math
+import os
 import warnings
 from functools import partial
 from typing import Optional, Tuple
-import os
 from urllib.parse import urlparse
+
 import requests
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from tqdm import tqdm
 
 

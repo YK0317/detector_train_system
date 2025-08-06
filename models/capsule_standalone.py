@@ -10,18 +10,19 @@ Based on the paper: "Capsule-forensics: Using capsule networks to detect forged 
 by Nguyen et al. (ICASSP 2019)
 """
 
+import argparse
+import logging
 import os
 import sys
+
+import cv2
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import cv2
-import numpy as np
-from PIL import Image
-import torchvision.transforms as transforms
 import torchvision.models as models
-import argparse
-import logging
+import torchvision.transforms as transforms
+from PIL import Image
 
 # Setup logging
 logging.basicConfig(

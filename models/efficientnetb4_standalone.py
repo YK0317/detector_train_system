@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 
 
+import argparse
+import os
+import time
+from pathlib import Path
+from typing import List, Tuple, Union
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import transforms
-from PIL import Image
-import numpy as np
-import os
-import argparse
-from pathlib import Path
-from typing import Union, List, Tuple
-import time
 from efficientnet_pytorch import EfficientNet
+from PIL import Image
+from torchvision import transforms
 
 
 class EfficientNetB4Standalone(nn.Module):

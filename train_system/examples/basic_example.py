@@ -10,8 +10,9 @@ This example shows how to:
 
 import torch
 import torchvision.models as models
-from train_system import UnifiedTrainingWrapper, ModelFactory
-from train_system.config import UnifiedTrainingConfig, ConfigTemplateManager
+
+from train_system import ModelFactory, UnifiedTrainingWrapper
+from train_system.config import ConfigTemplateManager, UnifiedTrainingConfig
 from train_system.core import UnifiedTrainer
 
 

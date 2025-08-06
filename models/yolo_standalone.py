@@ -1,8 +1,9 @@
-import sys
-import subprocess
 import os
-from ultralytics import YOLO
+import subprocess
+import sys
+
 import torch
+from ultralytics import YOLO
 
 # ============================================================================
 # Check and install required dependencies

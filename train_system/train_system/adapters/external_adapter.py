@@ -6,9 +6,9 @@ Users can provide their own adapter implementations without modifying the core c
 """
 
 import importlib.util
+import logging
 import sys
 from pathlib import Path
-import logging
 
 # Import base adapter to check inheritance
 from . import ModelAdapter

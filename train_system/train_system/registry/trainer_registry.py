@@ -5,13 +5,13 @@ Automatically scans specified directories for trainer classes and makes them
 available for use without requiring manual file path configuration.
 """
 
-import os
 import importlib.util
 import inspect
+import logging
+import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Type, Optional, Set
-import logging
+from typing import Dict, List, Optional, Set, Type
 
 logger = logging.getLogger(__name__)
 

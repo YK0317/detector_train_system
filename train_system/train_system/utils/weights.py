@@ -4,10 +4,10 @@ Weight utilities for the train system
 Provides utilities for working with trained model weights.
 """
 
+import logging
 import os
 from pathlib import Path
-from typing import Optional, List, Union
-import logging
+from typing import List, Optional, Union
 
 
 class WeightManager:

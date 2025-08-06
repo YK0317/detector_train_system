@@ -6,10 +6,11 @@ A comprehensive training system that can train any model with any dataset
 using configuration files and providing API access.
 """
 
-from setuptools import setup, find_packages
-from pathlib import Path
-import sys
 import os
+import sys
+from pathlib import Path
+
+from setuptools import find_packages, setup
 
 
 def use_universal_installer():

@@ -4,12 +4,13 @@ External Training Method Override System
 Allows users to specify custom training scripts from config file
 """
 
-import os
-import sys
 import importlib.util
 import inspect
+import os
+import sys
 from pathlib import Path
-from typing import Dict, Any, Optional, Callable
+from typing import Any, Callable, Dict, Optional
+
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -234,8 +235,9 @@ class HybridTrainer:
 
     def _create_data_loaders(self):
         """Create data loaders from config"""
-        from .dataset import UnifiedDataset
         import torchvision.transforms as transforms
+
+        from .dataset import UnifiedDataset
 
         # Create transforms (simplified version)
         img_size = getattr(self.config.data, "img_size", 224)

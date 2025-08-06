@@ -4,20 +4,21 @@ REST API Server for Train System
 Provides REST API endpoints for controlling training via HTTP requests.
 """
 
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-import threading
-import queue
 import json
-import yaml
-from pathlib import Path
 import logging
-from datetime import datetime
-from typing import Dict, Any, Optional
-import traceback
+import queue
+import threading
 import time
+import traceback
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Optional
 
-from ..config import UnifiedTrainingConfig, ConfigTemplateManager
+import yaml
+from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
+
+from ..config import ConfigTemplateManager, UnifiedTrainingConfig
 from ..core.trainer import UnifiedTrainer
 
 # Setup logging

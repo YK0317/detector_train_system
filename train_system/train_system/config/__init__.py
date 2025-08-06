@@ -5,12 +5,13 @@ This module defines the configuration schema and management for the training sys
 All models can be trained using this unified configuration format.
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Union
-from pathlib import Path
-import yaml
 import json
 import logging
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+import yaml
 
 
 @dataclass
@@ -519,6 +520,7 @@ class ConfigTemplateManager:
     def _get_complete_template(cls) -> Dict[str, Any]:
         """Get the complete configuration template with all fields"""
         from pathlib import Path
+
         import yaml
 
         # Path to the complete config template file

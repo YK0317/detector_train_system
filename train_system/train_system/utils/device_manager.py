@@ -3,10 +3,11 @@ Intelligent device detection and management
 Fixes hard-coded device settings in the train system
 """
 
-import torch
 import logging
-from typing import Optional, Dict, Any
 import platform
+from typing import Any, Dict, Optional
+
+import torch
 
 logger = logging.getLogger(__name__)
 

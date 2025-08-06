@@ -4,13 +4,14 @@ Utility functions for Train System
 Common utilities and helper functions used throughout the system.
 """
 
-import torch
+import json
 import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Dict, Any, Optional, List
-import json
+from typing import Any, Dict, List, Optional
+
+import torch
 import yaml
 
 
@@ -270,6 +271,7 @@ def set_random_seed(seed: int, deterministic: bool = False):
         deterministic: Whether to use deterministic algorithms
     """
     import random
+
     import numpy as np
 
     torch.manual_seed(seed)

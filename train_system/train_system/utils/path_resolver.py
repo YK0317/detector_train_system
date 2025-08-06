@@ -3,11 +3,11 @@ Intelligent path resolution with cross-platform support
 Fixes hard-coded path issues in the train system
 """
 
+import logging
 import os
 import platform
 from pathlib import Path
-from typing import Union, Dict, Any, Optional
-import logging
+from typing import Any, Dict, Optional, Union
 
 logger = logging.getLogger(__name__)
 

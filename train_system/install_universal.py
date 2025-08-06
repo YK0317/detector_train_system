@@ -5,16 +5,16 @@ Supports: Local, Google Colab, Kaggle, Jupyter, and other environments
 Run this in any environment: !python install_universal.py
 """
 
+import fnmatch
+import importlib.util
+import json
+import os
+import platform
+import shutil
 import subprocess
 import sys
-import os
-import shutil
-import platform
-import fnmatch
-import json
-import importlib.util
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class EnvironmentDetector:

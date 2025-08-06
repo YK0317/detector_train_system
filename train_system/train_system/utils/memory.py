@@ -4,9 +4,10 @@ Memory optimization utilities for train_system
 """
 
 import gc
-import torch
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
+
+import torch
 
 logger = logging.getLogger(__name__)
 

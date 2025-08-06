@@ -4,14 +4,15 @@ YOLO External Trainer using YOLO's built-in train function
 This leverages YOLO's optimized training pipeline while integrating with train_system
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from typing import Dict, Any
-from pathlib import Path
 import logging
 import os
 import tempfile
+from pathlib import Path
+from typing import Any, Dict
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
 import yaml
 
 # Robust YOLO import with fallback
@@ -138,11 +139,12 @@ class YOLOBuiltinTrainer:
     def _create_minimal_data_loaders(self):
         """Create minimal data loaders for dry-run compatibility"""
         try:
-            import torch
-            from torch.utils.data import DataLoader, Dataset
-            from PIL import Image
             import os
             from pathlib import Path
+
+            import torch
+            from PIL import Image
+            from torch.utils.data import DataLoader, Dataset
 
             class MinimalDataset(Dataset):
                 def __init__(self, data_path, max_samples=5):

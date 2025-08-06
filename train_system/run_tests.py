@@ -11,10 +11,10 @@ Usage:
     python run_tests.py --quick  # Run only basic tests
 """
 
-import sys
-import os
 import argparse
 import importlib.util
+import os
+import sys
 from pathlib import Path
 
 # Add train_system to path
@@ -74,7 +74,7 @@ def check_installation():
         )
 
         # Test basic imports
-        from train_system import UnifiedTrainingWrapper, ModelFactory
+        from train_system import ModelFactory, UnifiedTrainingWrapper
         from train_system.config import UnifiedTrainingConfig
 
         print("✅ Core imports successful")

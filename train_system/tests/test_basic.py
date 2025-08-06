@@ -6,23 +6,21 @@ This script tests the basic functionality of the train system
 without requiring actual training data.
 """
 
-import torch
-import torchvision.models as models
 import sys
 from pathlib import Path
+
+import torch
+import torchvision.models as models
 
 # Add the train_system to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
-    from train_system import UnifiedTrainingWrapper, ModelFactory
-    from train_system.config import (
-        UnifiedTrainingConfig,
-        ConfigTemplateManager,
-        ConfigValidator,
-    )
-    from train_system.core.wrapper import ModelUtils
+    from train_system import ModelFactory, UnifiedTrainingWrapper
     from train_system.adapters import AutoAdapter, StandardAdapter
+    from train_system.config import (ConfigTemplateManager, ConfigValidator,
+                                     UnifiedTrainingConfig)
+    from train_system.core.wrapper import ModelUtils
 
     print("✅ All imports successful!")
 except ImportError as e:

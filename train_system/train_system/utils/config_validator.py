@@ -5,12 +5,13 @@ Fixes configuration issues and provides smart defaults
 
 import logging
 import platform
-from typing import Dict, Any, List, Optional, Union
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
 import torch
 
-from .path_resolver import PathResolver
 from .device_manager import DeviceManager
+from .path_resolver import PathResolver
 
 logger = logging.getLogger(__name__)
 

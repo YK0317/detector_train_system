@@ -8,17 +8,18 @@ Date: July 28, 2025
 This script provides a standalone implementation of the Meso4 model for deepfake detection.
 """
 
+import argparse
+import logging
 import os
 import sys
+
+import cv2
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import cv2
-import numpy as np
-from PIL import Image
 import torchvision.transforms as transforms
-import argparse
-import logging
+from PIL import Image
 
 # Setup logging
 logging.basicConfig(

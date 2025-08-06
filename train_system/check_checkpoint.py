@@ -1,5 +1,6 @@
-import torch
 from pathlib import Path
+
+import torch
 
 # Check if checkpoint exists
 checkpoint_path = Path("C:/Users/mingw/Desktop/refactor/checkpoint_epoch_5.pth")

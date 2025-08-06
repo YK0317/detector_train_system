@@ -5,15 +5,17 @@ Provides easy command-line access to train models with configuration files.
 """
 
 import argparse
-import sys
-from pathlib import Path
 import json
-import yaml
 import logging
-import torch
+import sys
 from datetime import datetime
+from pathlib import Path
 
-from ..config import UnifiedTrainingConfig, ConfigTemplateManager, ConfigValidator
+import torch
+import yaml
+
+from ..config import (ConfigTemplateManager, ConfigValidator,
+                      UnifiedTrainingConfig)
 from ..core.trainer import UnifiedTrainer
 
 
@@ -301,11 +303,9 @@ def scan_components_command(
 ):
     """CLI command to scan additional paths"""
     try:
-        from ..registry import (
-            initialize_registries,
-            scan_additional_paths,
-            list_available_components,
-        )
+        from ..registry import (initialize_registries,
+                                list_available_components,
+                                scan_additional_paths)
 
         print("🔍 Initializing registries...")
         initialize_registries()
@@ -557,8 +557,8 @@ def complete_config_command():
 
     if args.with_comments:
         # Copy the complete template file with all comments
-        from pathlib import Path
         import shutil
+        from pathlib import Path
 
         source_template = (
             Path(__file__).parent.parent / "configs" / "complete_config_template.yaml"

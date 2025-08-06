@@ -21,19 +21,20 @@ Usage:
     python tests/test_comprehensive.py
 """
 
+import json
+import logging
+import os
+import sys
+import tempfile
+from pathlib import Path
+from typing import Any, Dict
+from unittest.mock import MagicMock, Mock, patch
+
+import numpy as np
 import pytest
 import torch
 import torchvision.models as models
-import sys
-import tempfile
-import json
 import yaml
-import os
-import numpy as np
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any
-import logging
 
 # Add the train_system to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -69,16 +70,14 @@ class TestSystemImports:
     def test_core_imports(self):
         """Test that all core components can be imported"""
         try:
-            from train_system import UnifiedTrainingWrapper, ModelFactory
-            from train_system.config import (
-                UnifiedTrainingConfig,
-                ConfigTemplateManager,
-                ConfigValidator,
-            )
-            from train_system.core.wrapper import ModelUtils
+            from train_system import ModelFactory, UnifiedTrainingWrapper
             from train_system.adapters import AutoAdapter, StandardAdapter
-            from train_system.core.trainer import UnifiedTrainer
+            from train_system.config import (ConfigTemplateManager,
+                                             ConfigValidator,
+                                             UnifiedTrainingConfig)
             from train_system.core.dataset import UnifiedDataset
+            from train_system.core.trainer import UnifiedTrainer
+            from train_system.core.wrapper import ModelUtils
 
             assert True, "All core imports successful"
         except ImportError as e:
@@ -118,10 +117,10 @@ class TestModelWrapping:
 
     def test_torchvision_model_wrapping(self):
         """Test wrapping of torchvision models"""
-        from train_system import ModelFactory
-
         # Create a ResNet18 model first
         import torchvision.models as models
+
+        from train_system import ModelFactory
 
         model = models.resnet18(pretrained=False)
         model.fc = torch.nn.Linear(model.fc.in_features, 2)  # Modify for 2 classes
@@ -208,7 +207,7 @@ class TestConfiguration:
 
     def test_config_validation(self):
         """Test configuration validation"""
-        from train_system.config import UnifiedTrainingConfig, ConfigValidator
+        from train_system.config import ConfigValidator, UnifiedTrainingConfig
 
         config = UnifiedTrainingConfig.from_dict(TEST_CONFIG_MINIMAL)
         validation_result = ConfigValidator.validate(config)
@@ -262,7 +261,7 @@ class TestDatasetHandling:
 
     def test_dataset_config_validation(self):
         """Test dataset configuration validation"""
-        from train_system.config import UnifiedTrainingConfig, ConfigValidator
+        from train_system.config import ConfigValidator, UnifiedTrainingConfig
 
         # Test different dataset types
         configs = [
@@ -315,8 +314,8 @@ class TestTrainingPipeline:
 
     def test_trainer_initialization(self):
         """Test trainer initialization without actual training"""
-        from train_system.core.trainer import UnifiedTrainer
         from train_system.config import UnifiedTrainingConfig
+        from train_system.core.trainer import UnifiedTrainer
 
         config = UnifiedTrainingConfig.from_dict(TEST_CONFIG_MINIMAL)
         trainer = UnifiedTrainer(config)
@@ -328,8 +327,8 @@ class TestTrainingPipeline:
     @patch("train_system.core.trainer.DataLoader")
     def test_trainer_setup_mocked(self, mock_dataloader, mock_dataset):
         """Test trainer setup with mocked components"""
-        from train_system.core.trainer import UnifiedTrainer
         from train_system.config import UnifiedTrainingConfig
+        from train_system.core.trainer import UnifiedTrainer
 
         # Mock dataset and dataloader
         mock_dataset_instance = Mock()
@@ -416,7 +415,7 @@ class TestErrorHandling:
 
     def test_invalid_config_handling(self):
         """Test handling of invalid configurations"""
-        from train_system.config import UnifiedTrainingConfig, ConfigValidator
+        from train_system.config import ConfigValidator, UnifiedTrainingConfig
 
         # Test missing required fields
         invalid_configs = [
@@ -467,11 +466,9 @@ class TestIntegration:
 
     def test_complete_config_workflow(self):
         """Test complete configuration workflow"""
-        from train_system.config import (
-            UnifiedTrainingConfig,
-            ConfigValidator,
-            ConfigTemplateManager,
-        )
+        from train_system.config import (ConfigTemplateManager,
+                                         ConfigValidator,
+                                         UnifiedTrainingConfig)
 
         # 1. Get template
         template = ConfigTemplateManager.get_template("torchvision")

@@ -7,23 +7,24 @@ with the train_system infrastructure, allowing users to leverage the
 exact training methodology from the research paper.
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.optim import Adam
-from torch.autograd import Variable
-import torch.backends.cudnn as cudnn
-from typing import Dict, Any
-from pathlib import Path
+import importlib.util
 import logging
 import os
+import shutil
 import sys
 import tempfile
-import shutil
-import importlib.util
-from tqdm import tqdm
+from pathlib import Path
+from typing import Any, Dict
+
 import numpy as np
+import torch
+import torch.backends.cudnn as cudnn
+import torch.nn as nn
+import torch.optim as optim
 from sklearn import metrics
+from torch.autograd import Variable
+from torch.optim import Adam
+from tqdm import tqdm
 
 
 class CapsuleForensicsTrainer:

@@ -7,11 +7,12 @@ Each adapter knows how to extract logits, features, and create prediction dictio
 from specific model output formats.
 """
 
+import logging
+from abc import ABC, abstractmethod
+from typing import Any, Callable, Dict, Optional
+
 import torch
 import torch.nn.functional as F
-from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, Callable
-import logging
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)

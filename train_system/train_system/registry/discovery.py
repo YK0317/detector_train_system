@@ -5,15 +5,16 @@ Provides high-level functions to initialize registries and list available compon
 Uses dynamic discovery to replace hard-coded paths.
 """
 
-from .adapter_registry import adapter_registry
-from .trainer_registry import trainer_registry
-from ..utils.path_resolver import PathResolver
-import logging
 import importlib.util
 import inspect
+import logging
 import sys
 from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
+
+from ..utils.path_resolver import PathResolver
+from .adapter_registry import adapter_registry
+from .trainer_registry import trainer_registry
 
 logger = logging.getLogger(__name__)
 
