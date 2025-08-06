@@ -14,6 +14,15 @@ Pillow>=8.3.0,<11.0.0
 PyYAML>=6.0,<7.0
 tqdm>=4.62.0,<5.0.0
 
+# Training utilities (required for core components)
+tensorboard>=2.7.0,<3.0.0
+pandas>=1.3.0,<2.3.0
+
+# Web framework (for API components)
+flask>=2.0.0,<4.0.0
+flask-cors>=3.0.0,<5.0.0
+requests>=2.25.0,<3.0.0
+
 # Essential for testing
 setuptools>=61.0
 wheel>=0.37.0
