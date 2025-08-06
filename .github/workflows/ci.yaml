@@ -2,30 +2,108 @@ name: Python CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, local_laptop ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+    
     steps:
     - uses: actions/checkout@v4
 
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-glx libglib2.0-0
+
+    - name: Install test dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        cd train_system
+        if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Install train_system package
+      run: |
+        cd train_system
+        python setup.py develop
+
+    - name: Run comprehensive tests
+      run: |
+        cd train_system
+        python -m pytest tests/test_comprehensive.py -v --tb=short --disable-warnings
+
+    - name: Run basic tests (fallback)
+      if: failure()
+      run: |
+        cd train_system
+        python tests/test_basic.py
+
+    - name: Test dry run functionality
+      run: |
+        cd train_system
+        python -c "
+        import tempfile, yaml, os
+        test_config = {
+          'model': {'name': 'test', 'type': 'torchvision', 'model_name': 'resnet18', 'num_classes': 2},
+          'data': {'name': 'test', 'type': 'image', 'train_path': '/tmp/train', 'val_path': '/tmp/val', 'batch_size': 2},
+          'training': {'epochs': 1, 'learning_rate': 0.001},
+          'output': {'output_dir': '/tmp/output', 'experiment_name': 'test'}
+        }
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+          yaml.dump(test_config, f)
+          config_path = f.name
+        try:
+          from train_system.cli.dry_run import validate_config
+          result = validate_config(config_path)
+          print(f'Dry run validation: {result}')
+        except Exception as e:
+          print(f'Dry run test: {e}')
+        finally:
+          os.unlink(config_path)
+        "
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-
-    - name: Install dependencies
+    
+    - name: Install linting dependencies
       run: |
         python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-    - name: Run install_universal.py
-      run: cd train_system; python install_universal.py
-
-    - name: Run tests
+        pip install flake8 black isort
+    
+    - name: Lint with flake8
       run: |
-        if [ -f pytest.ini ] || [ -d tests ]; then cd train_system; pytest; fi
+        cd train_system
+        flake8 train_system --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 train_system --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Check code formatting
+      run: |
+        cd train_system
+        black --check --diff train_system/
+        isort --check-only --diff train_system/

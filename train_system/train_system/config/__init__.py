@@ -143,7 +143,7 @@ class OutputConfig:
     """Output configuration"""
     output_dir: str = "training_output"
     experiment_name: str = "experiment"
-    save_best_only: bool = True
+    save_best_only: bool = False
     save_last: bool = True
     
     # What to save
