@@ -43,65 +43,70 @@ __author__ = "AI Assistant"
 __email__ = "assistant@example.com"
 
 # Core imports
+_imported_components = []
+
 try:
-    # Adapter imports
+    # Configuration imports (minimal dependencies)
+    from .config import (ConfigTemplateManager, ConfigValidator, DataConfig,
+                         ModelConfig, TrainingConfig, UnifiedTrainingConfig,
+                         ValidationResult)
+    _imported_components.extend([
+        "ConfigValidator", "ValidationResult", "ConfigTemplateManager",
+        "UnifiedTrainingConfig", "ModelConfig", "DataConfig", "TrainingConfig"
+    ])
+except ImportError as e:
+    import warnings
+    warnings.warn(f"Config components could not be imported: {e}")
+
+try:
+    # Adapter imports (require torch)
     from .adapters import (AutoAdapter, CapsuleNetworkAdapter,
                            CustomFunctionAdapter, DictOutputAdapter,
                            LogitsAndFeaturesAdapter, ModelAdapter,
                            StandardAdapter, get_adapter_for_model)
-    # API imports
-    from .api.server import TrainingAPI
-    # Configuration imports
-    from .config import (ConfigTemplateManager, ConfigValidator, DataConfig,
-                         ModelConfig, TrainingConfig, UnifiedTrainingConfig,
-                         ValidationResult)
+    _imported_components.extend([
+        "ModelAdapter", "StandardAdapter", "LogitsAndFeaturesAdapter",
+        "DictOutputAdapter", "CapsuleNetworkAdapter", "CustomFunctionAdapter",
+        "AutoAdapter", "get_adapter_for_model"
+    ])
+except ImportError as e:
+    import warnings
+    warnings.warn(f"Adapter components could not be imported: {e}")
+
+try:
+    # Core training components (require torch)
     from .core.dataset import UnifiedDataset
     from .core.trainer import UnifiedTrainer
     from .core.wrapper import ModelFactory, UnifiedTrainingWrapper
+    _imported_components.extend([
+        "UnifiedTrainingWrapper", "ModelFactory", "UnifiedTrainer", "UnifiedDataset"
+    ])
+except ImportError as e:
+    import warnings
+    warnings.warn(f"Core training components could not be imported: {e}")
+
+try:
     # Registry imports
     from .registry import (AdapterRegistry, TrainerRegistry,
                            get_component_by_name, initialize_registries,
                            is_component_available, list_available_components,
                            register_component, scan_additional_paths)
-
+    _imported_components.extend([
+        "AdapterRegistry", "TrainerRegistry", "initialize_registries",
+        "list_available_components", "scan_additional_paths", "get_component_by_name",
+        "register_component", "is_component_available"
+    ])
 except ImportError as e:
-    # Graceful handling of import errors during development
     import warnings
+    warnings.warn(f"Registry components could not be imported: {e}")
 
-    warnings.warn(f"Some train_system components could not be imported: {e}")
+try:
+    # API imports (require Flask)
+    from .api.server import TrainingAPI
+    _imported_components.append("TrainingAPI")
+except ImportError as e:
+    import warnings
+    warnings.warn(f"API components could not be imported (Flask may not be available): {e}")
 
-__all__ = [
-    # Core classes
-    "UnifiedTrainingWrapper",
-    "ModelFactory",
-    "UnifiedTrainer",
-    "UnifiedDataset",
-    # Adapters
-    "ModelAdapter",
-    "StandardAdapter",
-    "LogitsAndFeaturesAdapter",
-    "DictOutputAdapter",
-    "CapsuleNetworkAdapter",
-    "CustomFunctionAdapter",
-    "AutoAdapter",
-    "get_adapter_for_model",
-    # Configuration
-    "ConfigValidator",
-    "ValidationResult",
-    "ConfigTemplateManager",
-    "UnifiedTrainingConfig",
-    "ModelConfig",
-    "DataConfig",
-    "TrainingConfig",
-    # API
-    "TrainingAPI",
-    # Registry
-    "AdapterRegistry",
-    "TrainerRegistry",
-    "initialize_registries",
-    "list_available_components",
-    "scan_additional_paths",
-    "get_component_by_name",
-    "register_component",
-    "is_component_available",
-]
+# Dynamic __all__ based on successfully imported components
+__all__ = _imported_components
