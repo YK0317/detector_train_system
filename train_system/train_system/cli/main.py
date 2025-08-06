@@ -260,7 +260,20 @@ def show_system_info():
     print(f"   ts-complete-config        Generate complete config template")
     print(f"   ts-template <type>        Generate specific template")
     print(f"   ts-train <config>         Train model from config")
-    print(f"   ts-api                    Start API server")
+    
+    # Check if web API is available
+    try:
+        import train_system.api.server
+        print(f"   ts-api                    Start basic API server (optional)")
+        
+        # Check for enhanced API
+        try:
+            import train_system.api.web_server
+            print(f"   ts-web-api                Start enhanced web API server (optional)")
+        except ImportError:
+            pass
+    except ImportError:
+        print(f"   ts-api                    Not available (install with: pip install -e \".[web]\")")
 
     print(f"\n🔧 Full CLI Commands:")
     print(f"   train-system create-template <type> <output>")
@@ -364,7 +377,8 @@ Available CLI Commands:
   ts-train              - Quick training command
   ts-template           - Template generator  
   ts-complete-config    - Complete config generator
-  ts-api               - API server
+  ts-api               - API server (optional, requires web dependencies)
+  ts-web-api           - Enhanced web API server (optional, requires web dependencies)
   train-system         - Full CLI interface
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
