@@ -127,11 +127,12 @@ def validate_config(config_path: str):
 
 
 def train_from_config(config_path: str):
-    """Train model from configuration file"""
+    """Train model from configuration file with comprehensive error handling"""
 
     if not validate_config(config_path):
         return
 
+    trainer = None
     try:
         # Load configuration
         config_path = Path(config_path)
@@ -142,17 +143,61 @@ def train_from_config(config_path: str):
             config = UnifiedTrainingConfig.from_json(config_path)
 
         # Create trainer and start training
+        print(f"🚀 Initializing trainer...")
         trainer = UnifiedTrainer(config)
+        
+        print(f"🎯 Starting training...")
         results = trainer.train()
 
         print(f"\n🎉 Training completed successfully!")
-        print(f"🏆 Best validation accuracy: {results['best_val_accuracy']:.2f}%")
+        if isinstance(results, dict) and 'best_val_accuracy' in results:
+            print(f"🏆 Best validation accuracy: {results['best_val_accuracy']:.2f}%")
+        elif isinstance(results, (int, float)):
+            print(f"🏆 Best validation accuracy: {results:.2f}%")
+        else:
+            print(f"🏆 Training completed with result: {results}")
 
+    except KeyboardInterrupt:
+        print(f"\n⚠️ Training interrupted by user")
+        if trainer and hasattr(trainer, 'output_dir'):
+            print(f"📁 Output directory: {trainer.output_dir}")
+            print(f"📝 Check error logs in the output directory for details")
+        sys.exit(1)
+        
     except Exception as e:
         print(f"❌ Training failed: {e}")
+        
+        # Try to provide helpful information about where logs are saved
+        if trainer and hasattr(trainer, 'output_dir'):
+            print(f"📁 Output directory: {trainer.output_dir}")
+            print(f"📝 Detailed error log should be available in the output directory")
+            
+            # Look for recent error logs
+            try:
+                error_logs = list(trainer.output_dir.glob("error_log_*.log"))
+                if error_logs:
+                    latest_log = max(error_logs, key=lambda x: x.stat().st_mtime)
+                    print(f"🔍 Latest error log: {latest_log}")
+            except Exception:
+                pass
+        else:
+            print(f"📝 Error occurred during initialization - check console output above")
+        
+        # Print abbreviated traceback for debugging
         import traceback
-
-        traceback.print_exc()
+        print(f"\n📋 Error Details:")
+        print(f"   Type: {type(e).__name__}")
+        print(f"   Message: {str(e)}")
+        
+        # Only show full traceback if requested via environment variable
+        import os
+        if os.getenv('TRAIN_SYSTEM_DEBUG', '').lower() in ('1', 'true', 'yes'):
+            print(f"\n🔧 Full Traceback (TRAIN_SYSTEM_DEBUG=1):")
+            traceback.print_exc()
+        else:
+            print(f"💡 Set TRAIN_SYSTEM_DEBUG=1 for full traceback")
+        
+        sys.exit(1)
 
 
 def list_experiments():

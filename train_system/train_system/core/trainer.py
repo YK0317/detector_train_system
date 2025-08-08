@@ -234,6 +234,217 @@ class UnifiedTrainer:
 
         return logger
 
+    def _create_error_log(self, error: Exception, phase: str, additional_info: dict = None):
+        """Create detailed error log file in output directory
+        
+        Args:
+            error: The exception that occurred
+            phase: Training phase where error occurred (e.g., 'initialization', 'model_loading', 'data_loading', 'training')
+            additional_info: Additional context information
+        """
+        try:
+            # Ensure output directory exists
+            if not hasattr(self, 'output_dir') or not self.output_dir:
+                # Create fallback output directory
+                self.output_dir = Path("training_output") / "error_logs"
+                self.output_dir.mkdir(parents=True, exist_ok=True)
+            else:
+                self.output_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Create error log filename with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            error_log_path = self.output_dir / f"error_log_{phase}_{timestamp}.log"
+            
+            # Gather system information with safe imports
+            import platform
+            import traceback
+            
+            try:
+                import psutil
+                memory_info = psutil.virtual_memory()
+                memory_total_gb = round(memory_info.total / (1024**3), 2)
+                memory_available_gb = round(memory_info.available / (1024**3), 2)
+            except ImportError:
+                memory_total_gb = "Unknown (psutil not available)"
+                memory_available_gb = "Unknown (psutil not available)"
+            
+            # Collect error details
+            error_details = {
+                "timestamp": datetime.now().isoformat(),
+                "phase": phase,
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+                "traceback": traceback.format_exc(),
+                "system_info": {
+                    "platform": platform.platform(),
+                    "python_version": platform.python_version(),
+                    "pytorch_version": torch.__version__,
+                    "cuda_available": torch.cuda.is_available(),
+                    "cuda_version": torch.version.cuda if torch.cuda.is_available() else None,
+                    "gpu_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+                    "memory_total_gb": memory_total_gb,
+                    "memory_available_gb": memory_available_gb,
+                },
+                "config_info": {},
+                "additional_info": additional_info or {}
+            }
+            
+            # Add configuration details if available
+            if hasattr(self, 'config'):
+                try:
+                    config_dict = self.config.to_dict() if hasattr(self.config, 'to_dict') else self._config_to_dict(self.config)
+                    error_details["config_info"] = config_dict
+                except Exception as config_err:
+                    error_details["config_info"] = {"config_extraction_error": str(config_err)}
+            
+            # Add device information if available
+            if hasattr(self, 'device'):
+                error_details["device_info"] = {
+                    "device": str(self.device),
+                }
+                if self.device.type == 'cuda':
+                    try:
+                        error_details["device_info"].update({
+                            "gpu_name": torch.cuda.get_device_name(self.device),
+                            "gpu_memory_total": torch.cuda.get_device_properties(self.device).total_memory,
+                            "gpu_memory_allocated": torch.cuda.memory_allocated(self.device),
+                            "gpu_memory_cached": torch.cuda.memory_reserved(self.device),
+                        })
+                    except Exception:
+                        pass
+            
+            # Write detailed error log
+            with open(error_log_path, 'w', encoding='utf-8') as f:
+                f.write("=" * 80 + "\n")
+                f.write(f"TRAINING ERROR LOG - {error_details['timestamp']}\n")
+                f.write("=" * 80 + "\n\n")
+                
+                f.write(f"ERROR PHASE: {phase}\n")
+                f.write(f"ERROR TYPE: {error_details['error_type']}\n")
+                f.write(f"ERROR MESSAGE: {error_details['error_message']}\n\n")
+                
+                f.write("FULL TRACEBACK:\n")
+                f.write("-" * 40 + "\n")
+                f.write(error_details['traceback'])
+                f.write("\n" + "-" * 40 + "\n\n")
+                
+                f.write("SYSTEM INFORMATION:\n")
+                f.write("-" * 40 + "\n")
+                for key, value in error_details['system_info'].items():
+                    f.write(f"{key}: {value}\n")
+                f.write("\n")
+                
+                if error_details.get('device_info'):
+                    f.write("DEVICE INFORMATION:\n")
+                    f.write("-" * 40 + "\n")
+                    for key, value in error_details.get('device_info', {}).items():
+                        f.write(f"{key}: {value}\n")
+                    f.write("\n")
+                
+                f.write("CONFIGURATION:\n")
+                f.write("-" * 40 + "\n")
+                import json
+                f.write(json.dumps(error_details['config_info'], indent=2, default=str))
+                f.write("\n\n")
+                
+                if additional_info:
+                    f.write("ADDITIONAL INFORMATION:\n")
+                    f.write("-" * 40 + "\n")
+                    f.write(json.dumps(additional_info, indent=2, default=str))
+                    f.write("\n\n")
+                
+                f.write("TROUBLESHOOTING TIPS:\n")
+                f.write("-" * 40 + "\n")
+                self._write_troubleshooting_tips(f, phase, error)
+                
+                f.write("\n" + "=" * 80 + "\n")
+                f.write("END OF ERROR LOG\n")
+                f.write("=" * 80 + "\n")
+            
+            # Log the error file creation
+            print(f"\n❌ TRAINING FAILED - {phase.upper()}")
+            print(f"📝 Error log saved to: {error_log_path}")
+            print(f"🔍 Error: {error_details['error_type']}: {error_details['error_message']}")
+            
+            # Also write to console logger if available
+            if hasattr(self, 'logger'):
+                self.logger.error(f"Training failed during {phase}: {error}")
+                self.logger.error(f"Detailed error log saved to: {error_log_path}")
+            
+            return error_log_path
+            
+        except Exception as log_error:
+            # Fallback error logging to current directory
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            fallback_path = Path(f"training_error_{timestamp}.log")
+            try:
+                with open(fallback_path, 'w') as f:
+                    f.write(f"CRITICAL ERROR - Failed to create error log in output directory\n")
+                    f.write(f"Original error: {error}\n")
+                    f.write(f"Logging error: {log_error}\n")
+                    f.write(f"Traceback: {traceback.format_exc()}\n")
+                print(f"❌ Critical error logging failure. Fallback log: {fallback_path}")
+            except Exception:
+                print(f"❌ CRITICAL: Unable to create any error logs. Original error: {error}")
+            
+            return fallback_path if 'fallback_path' in locals() else None
+
+    def _write_troubleshooting_tips(self, file_handle, phase: str, error: Exception):
+        """Write phase-specific troubleshooting tips to error log"""
+        tips = {
+            "initialization": [
+                "• Check if all required dependencies are installed",
+                "• Verify CUDA installation if using GPU",
+                "• Ensure sufficient system memory",
+                "• Check configuration file syntax and paths",
+            ],
+            "model_loading": [
+                "• Verify model path exists and is accessible",
+                "• Check model file format and compatibility",
+                "• Ensure model architecture is supported",
+                "• Verify model class name and module path for custom models",
+                "• Check if required model dependencies are installed (timm, torchvision, etc.)",
+            ],
+            "data_loading": [
+                "• Verify dataset path exists and contains data",
+                "• Check image/file formats are supported",
+                "• Ensure sufficient disk space and memory",
+                "• Verify data loader configuration (batch_size, num_workers)",
+                "• Check file permissions on dataset directory",
+            ],
+            "optimizer_setup": [
+                "• Verify optimizer name is supported",
+                "• Check learning rate and other hyperparameter values",
+                "• Ensure model parameters are available for optimization",
+            ],
+            "training": [
+                "• Check GPU memory usage - reduce batch_size if needed",
+                "• Verify data format matches model expectations",
+                "• Monitor system resource usage",
+                "• Check for NaN or infinite loss values",
+                "• Verify learning rate schedule configuration",
+            ],
+            "checkpoint_loading": [
+                "• Verify checkpoint file exists and is not corrupted",
+                "• Check checkpoint format compatibility",
+                "• Ensure model architecture matches checkpoint",
+                "• Try training from scratch if checkpoint is problematic",
+            ]
+        }
+        
+        phase_tips = tips.get(phase, ["• Review error details and configuration"])
+        
+        for tip in phase_tips:
+            file_handle.write(f"{tip}\n")
+        
+        # Add common tips
+        file_handle.write(f"\nCOMMON SOLUTIONS:\n")
+        file_handle.write(f"• Update PyTorch and dependencies: pip install --upgrade torch torchvision\n")
+        file_handle.write(f"• Clear Python cache: python -c 'import torch; torch.hub._get_cache_dir()' then delete cache\n")
+        file_handle.write(f"• Check available disk space in output directory\n")
+        file_handle.write(f"• Restart Python session to clear any memory issues\n")
+        file_handle.write(f"• Try with a smaller batch_size or simpler model first\n")
+
     def _initialize_registries(self):
         """Initialize registries for auto-discovery"""
         try:
@@ -1322,139 +1533,232 @@ class UnifiedTrainer:
             return 0
 
     def train(self):
-        """Main training loop - handles both built-in and external trainers"""
-
-        # Check if external trainer should be used
-        if self.use_external_trainer:
-            return self._train_with_external_trainer()
-        else:
-            return self._train_with_builtin_trainer()
+        """Main training loop - handles both built-in and external trainers with comprehensive error logging"""
+        try:
+            # Check if external trainer should be used
+            if self.use_external_trainer:
+                return self._train_with_external_trainer()
+            else:
+                return self._train_with_builtin_trainer()
+        except Exception as e:
+            # Create comprehensive error log
+            self._create_error_log(e, "training", {
+                "use_external_trainer": getattr(self, 'use_external_trainer', None),
+                "model_loaded": hasattr(self, 'model') and self.model is not None,
+                "data_loaded": hasattr(self, 'train_loader') and self.train_loader is not None,
+                "optimizer_setup": hasattr(self, 'optimizer') and self.optimizer is not None,
+            })
+            raise  # Re-raise the exception after logging
 
     def _train_with_external_trainer(self):
-        """Train using external trainer"""
-        self.logger.info("🔧 Using External Training Method")
-        self.logger.info("=" * 60)
+        """Train using external trainer with error handling"""
+        try:
+            self.logger.info("🔧 Using External Training Method")
+            self.logger.info("=" * 60)
 
-        # For external trainers, skip model and data loading
-        # The external trainer will handle these
+            # For external trainers, skip model and data loading
+            # The external trainer will handle these
 
-        # Create HybridTrainer which handles external training
-        hybrid_trainer = HybridTrainer(
-            config=self.config,
-            model=None,  # External trainer will create its own model
-            device=self.device,
-            output_dir=self.output_dir,
-        )
+            # Create HybridTrainer which handles external training
+            hybrid_trainer = HybridTrainer(
+                config=self.config,
+                model=None,  # External trainer will create its own model
+                device=self.device,
+                output_dir=self.output_dir,
+            )
 
-        # Delegate training to external trainer
-        return hybrid_trainer.train()
+            # Delegate training to external trainer
+            return hybrid_trainer.train()
+            
+        except Exception as e:
+            # Create error log for external trainer failures
+            self._create_error_log(e, "external_trainer", {
+                "external_trainer_config": getattr(self.config, 'external_trainer', None).__dict__ if hasattr(self.config, 'external_trainer') else None,
+                "trainer_name": getattr(getattr(self.config, 'external_trainer', None), 'name', None),
+                "trainer_path": getattr(getattr(self.config, 'external_trainer', None), 'script_path', None),
+            })
+            raise
 
     def _train_with_builtin_trainer(self):
-        """Train using built-in training method with clean logging"""
-        # Setup everything
-        self.load_model()
-        self.load_data()
-        self.setup_optimizer()
-
-        # Check for resume from checkpoint
-        start_epoch = 0
-        if (
-            hasattr(self.config.training, "resume_from_checkpoint")
-            and self.config.training.resume_from_checkpoint
-        ):
-            resume_config = self.config.training.resume_from_checkpoint
-
-            if resume_config is True:
-                # Auto-find latest checkpoint
-                checkpoint_path = self._find_latest_checkpoint()
-                if checkpoint_path:
-                    start_epoch = self._load_checkpoint_and_resume(checkpoint_path)
-                else:
-                    self.logger.warning(
-                        "🔍 No checkpoint found for auto-resume, starting from scratch"
-                    )
-            elif isinstance(resume_config, str):
-                # Use specified checkpoint path
-                checkpoint_path = Path(resume_config)
-                if checkpoint_path.exists():
-                    start_epoch = self._load_checkpoint_and_resume(checkpoint_path)
-                else:
-                    self.logger.error(
-                        f"❌ Specified checkpoint not found: {checkpoint_path}"
-                    )
-                    self.logger.warning("🔄 Starting training from scratch")
-
-        self.setup_clean_logging()
-
-        # Save configuration
-        if self.config.output.save_config:
-            self.config.save_yaml(self.output_dir / "config.yaml")
-            self.config.save_json(self.output_dir / "config.json")
-
-        # Show dataset info after loading
-        print(
-            f"Dataset: {len(self.train_loader):,} train batches, {len(self.val_loader):,} val batches"
-        )
-
-        epochs = self.config.training.epochs
-
+        """Train using built-in training method with clean logging and comprehensive error handling"""
         try:
-            for epoch in range(start_epoch, epochs):
-                self.current_epoch = epoch
+            # Setup everything with individual error handling
+            try:
+                self.load_model()
+            except Exception as e:
+                self._create_error_log(e, "model_loading", {
+                    "model_config": getattr(self.config, 'model', None).__dict__ if hasattr(self.config, 'model') else None
+                })
+                raise
+            
+            try:
+                self.load_data()
+            except Exception as e:
+                self._create_error_log(e, "data_loading", {
+                    "data_config": getattr(self.config, 'data', None).__dict__ if hasattr(self.config, 'data') else None
+                })
+                raise
+            
+            try:
+                self.setup_optimizer()
+            except Exception as e:
+                self._create_error_log(e, "optimizer_setup", {
+                    "training_config": getattr(self.config, 'training', None).__dict__ if hasattr(self.config, 'training') else None
+                })
+                raise
 
-                # Training phase with progress bar
-                train_loss, train_acc = self._train_epoch_with_progress(epoch)
-                self.train_losses.append(train_loss)
+            # Check for resume from checkpoint
+            start_epoch = 0
+            if (
+                hasattr(self.config.training, "resume_from_checkpoint")
+                and self.config.training.resume_from_checkpoint
+            ):
+                try:
+                    resume_config = self.config.training.resume_from_checkpoint
 
-                # Validation phase with progress bar
-                val_loss, val_acc = self._validate_epoch_with_progress(epoch)
-                self.val_accuracies.append(val_acc)
+                    if resume_config is True:
+                        # Auto-find latest checkpoint
+                        checkpoint_path = self._find_latest_checkpoint()
+                        if checkpoint_path:
+                            start_epoch = self._load_checkpoint_and_resume(checkpoint_path)
+                        else:
+                            self.logger.warning(
+                                "🔍 No checkpoint found for auto-resume, starting from scratch"
+                            )
+                    elif isinstance(resume_config, str):
+                        # Use specified checkpoint path
+                        checkpoint_path = Path(resume_config)
+                        if checkpoint_path.exists():
+                            start_epoch = self._load_checkpoint_and_resume(checkpoint_path)
+                        else:
+                            self.logger.error(
+                                f"❌ Specified checkpoint not found: {checkpoint_path}"
+                            )
+                            self.logger.warning("🔄 Starting training from scratch")
+                except Exception as e:
+                    self._create_error_log(e, "checkpoint_loading", {
+                        "resume_config": resume_config,
+                        "checkpoint_path": str(checkpoint_path) if 'checkpoint_path' in locals() else None
+                    })
+                    self.logger.warning(f"Failed to load checkpoint: {e}, starting from scratch")
+                    start_epoch = 0
 
-                # Scheduler step
-                if self.scheduler:
-                    if self.config.training.scheduler.lower() == "plateau":
-                        self.scheduler.step(val_acc)
-                    else:
-                        self.scheduler.step()
+            self.setup_clean_logging()
 
-                # Log results
-                self.log_epoch_results(epoch, train_loss, train_acc, val_loss, val_acc)
+            # Save configuration
+            if self.config.output.save_config:
+                self.config.save_yaml(self.output_dir / "config.yaml")
+                self.config.save_json(self.output_dir / "config.json")
 
-                # Update best accuracy
-                if val_acc > self.best_val_acc:
-                    self.best_val_acc = val_acc
+            # Show dataset info after loading
+            print(
+                f"Dataset: {len(self.train_loader):,} train batches, {len(self.val_loader):,} val batches"
+            )
 
-                # Save checkpoint with correct epoch numbering
-                # epoch is 0-based in loop, save as epoch + 1 (completed epoch, 1-based)
-                if (
-                    epoch % self.config.training.save_frequency == 0
-                    or val_acc > self.best_val_acc
-                ):
-                    self.save_checkpoint(epoch + 1, val_acc > self.best_val_acc)
+            epochs = self.config.training.epochs
 
-                # Tensorboard logging
-                if self.writer:
-                    self.writer.add_scalar("Loss/Train_Epoch", train_loss, epoch)
-                    self.writer.add_scalar("Loss/Val_Epoch", val_loss, epoch)
-                    self.writer.add_scalar("Accuracy/Train_Epoch", train_acc, epoch)
-                    self.writer.add_scalar("Accuracy/Val_Epoch", val_acc, epoch)
-                    self.writer.add_scalar(
-                        "Learning_Rate", self.optimizer.param_groups[0]["lr"], epoch
-                    )
+            try:
+                for epoch in range(start_epoch, epochs):
+                    self.current_epoch = epoch
 
-            self.log_training_complete()
+                    # Training phase with progress bar
+                    train_loss, train_acc = self._train_epoch_with_progress(epoch)
+                    self.train_losses.append(train_loss)
 
-            # Save final results
-            results = {
-                "best_val_accuracy": self.best_val_acc,
-                "train_losses": self.train_losses,
-                "val_accuracies": self.val_accuracies,
-                "config": self.config.to_dict(),
-                "timestamp": datetime.now().isoformat(),
-            }
+                    # Validation phase with progress bar
+                    val_loss, val_acc = self._validate_epoch_with_progress(epoch)
+                    self.val_accuracies.append(val_acc)
 
-            with open(self.output_dir / "training_results.json", "w") as f:
-                json.dump(results, f, indent=2)
+                    # Scheduler step
+                    if self.scheduler:
+                        if self.config.training.scheduler.lower() == "plateau":
+                            self.scheduler.step(val_acc)
+                        else:
+                            self.scheduler.step()
+
+                    # Log results
+                    self.log_epoch_results(epoch, train_loss, train_acc, val_loss, val_acc)
+
+                    # Update best accuracy
+                    if val_acc > self.best_val_acc:
+                        self.best_val_acc = val_acc
+
+                    # Save checkpoint with correct epoch numbering
+                    # epoch is 0-based in loop, save as epoch + 1 (completed epoch, 1-based)
+                    if (
+                        epoch % self.config.training.save_frequency == 0
+                        or val_acc > self.best_val_acc
+                    ):
+                        self.save_checkpoint(epoch + 1, val_acc > self.best_val_acc)
+
+                    # Tensorboard logging
+                    if self.writer:
+                        self.writer.add_scalar("Loss/Train_Epoch", train_loss, epoch)
+                        self.writer.add_scalar("Loss/Val_Epoch", val_loss, epoch)
+                        self.writer.add_scalar("Accuracy/Train_Epoch", train_acc, epoch)
+                        self.writer.add_scalar("Accuracy/Val_Epoch", val_acc, epoch)
+                        self.writer.add_scalar(
+                            "Learning_Rate", self.optimizer.param_groups[0]["lr"], epoch
+                        )
+
+                self.log_training_complete()
+
+                # Save final results
+                results = {
+                    "best_val_accuracy": self.best_val_acc,
+                    "train_losses": self.train_losses,
+                    "val_accuracies": self.val_accuracies,
+                    "total_epochs": epochs,
+                    "completed_successfully": True
+                }
+
+                with open(self.output_dir / "training_results.json", "w") as f:
+                    json.dump(results, f, indent=2)
+
+                return self.best_val_acc
+
+            except KeyboardInterrupt:
+                self.logger.warning("\n⚠️ Training interrupted by user")
+                # Save interruption checkpoint
+                try:
+                    interrupt_path = self.output_dir / f"interrupted_epoch_{self.current_epoch}.pth"
+                    self.save_checkpoint(self.current_epoch, is_best=False, filepath=interrupt_path)
+                    self.logger.info(f"💾 Saved interruption checkpoint: {interrupt_path}")
+                except Exception as save_error:
+                    self.logger.error(f"Failed to save interruption checkpoint: {save_error}")
+                
+                # Create interruption log
+                self._create_error_log(
+                    KeyboardInterrupt("Training interrupted by user"), 
+                    "training", 
+                    {
+                        "interrupted_at_epoch": self.current_epoch,
+                        "completed_epochs": len(self.train_losses),
+                        "best_accuracy_so_far": self.best_val_acc,
+                        "interruption_checkpoint_saved": True
+                    }
+                )
+                raise
+                
+            except Exception as e:
+                # Create detailed training error log
+                self._create_error_log(e, "training", {
+                    "current_epoch": getattr(self, 'current_epoch', None),
+                    "completed_epochs": len(getattr(self, 'train_losses', [])),
+                    "best_accuracy_so_far": getattr(self, 'best_val_acc', 0.0),
+                    "total_epochs_planned": epochs,
+                    "last_train_loss": self.train_losses[-1] if hasattr(self, 'train_losses') and self.train_losses else None,
+                    "last_val_accuracy": self.val_accuracies[-1] if hasattr(self, 'val_accuracies') and self.val_accuracies else None,
+                })
+                raise
+                
+        except Exception as e:
+            # This catches any errors during the setup phase
+            if "model_loading" not in str(e) and "data_loading" not in str(e) and "optimizer_setup" not in str(e):
+                self._create_error_log(e, "initialization", {
+                    "setup_phase": "builtin_trainer_initialization"
+                })
+            raise
 
             # Close tensorboard writer
             if self.writer:
